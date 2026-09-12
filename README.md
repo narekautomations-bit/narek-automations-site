@@ -3,9 +3,11 @@
 Plain static HTML/CSS/JS, no build step, no framework. Open `index.html` via a
 local server (not `file://` — see below) to preview.
 
-**Live site:** https://narek-automations.netlify.app
+**Live site:** https://narekautomations.com
 Deploys automatically on every push to `master` (Netlify is connected to
-this GitHub repo via the Netlify GitHub App).
+this GitHub repo via the Netlify GitHub App). Domain purchased and managed
+through Netlify's registrar — DNS and SSL are auto-configured, renews
+annually (~$17/yr).
 
 ## Local preview
 
