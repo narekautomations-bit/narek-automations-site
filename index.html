@@ -21,15 +21,21 @@
     <div class="container nav__inner">
       <a class="logo" href="#top" aria-label="Narek Automations, home" data-magnetic data-magnetic-strength="0.25">
         <span class="logo__mark" aria-hidden="true">fx</span>
-        Narek Automations
+        <span class="logo__word">Narek Automations</span>
       </a>
-      <nav class="nav__links" aria-label="Primary">
-        <a href="#how-it-works">Process</a>
-        <a href="#services">Services</a>
-        <a href="#faq">FAQ</a>
-      </nav>
       <div class="nav__actions">
         <a class="btn btn--primary btn--sm" href="#contact" data-magnetic>Free Consultation</a>
+        <div class="nav-menu" id="nav-menu">
+          <button class="nav-menu__toggle" id="nav-menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-menu-list">
+            <span class="nav-menu__bars" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span class="nav-menu__word">Menu</span>
+          </button>
+          <ul class="nav-menu__list" id="nav-menu-list" hidden>
+            <li><a href="#how-it-works">Process</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#contact" data-sms-link>Text Us</a></li>
+          </ul>
+        </div>
       </div>
     </div>
   </header>
@@ -39,6 +45,8 @@
     <section id="top" class="hero tone-dark">
       <!-- Ambient automation-log rain; populated by js/matrix-rain.js -->
       <div class="matrix-rain" id="matrix-rain" aria-hidden="true"></div>
+      <!-- Vertical matrix fall; populated by js/matrix-fall.js -->
+      <div class="matrix-fall" id="matrix-fall" aria-hidden="true"></div>
       <div class="container hero__inner">
         <h1 class="reveal" data-kinetic>AI-Powered Workflow Automation</h1>
 
@@ -56,6 +64,12 @@
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg> One build &mdash; yours forever</span>
         </div>
       </div>
+
+      <!-- Pulls the eye down the page instead of into the menu. -->
+      <a class="scroll-cue" href="#how-it-works">
+        <span class="scroll-cue__label">scroll</span>
+        <span class="scroll-cue__track" aria-hidden="true"><span class="scroll-cue__light"></span></span>
+      </a>
     </section>
 
 
@@ -64,33 +78,7 @@
       <div class="container" style="position: relative;">
         <div class="section-head section-head--center reveal">
           <p class="eyebrow" style="justify-content:center;">How It Works</p>
-          <h2>A straightforward process, start to finish</h2>
-        </div>
-        <div class="process-steps">
-          <div class="process-step reveal">
-            <span class="process-step__num" aria-hidden="true">01</span>
-            <h3>Discovery Call</h3>
-            <p>A free 20-30 minute call to understand your current process and where the time actually goes.</p>
-          </div>
-          <div class="process-step reveal">
-            <span class="process-step__num" aria-hidden="true">02</span>
-            <h3>Scoped Proposal</h3>
-            <p>You get a clear, written scope and quote before any work begins — no surprises, no hourly clock.</p>
-          </div>
-          <div class="process-step reveal">
-            <span class="process-step__num" aria-hidden="true">03</span>
-            <h3>Build &amp; Review</h3>
-            <p>You don't need to hand over real or live files to get started — I build and test on templates or sanitized sample data, with checkpoints along the way so you can review progress.</p>
-          </div>
-          <div class="process-step reveal">
-            <span class="process-step__num" aria-hidden="true">04</span>
-            <h3>Handoff &amp; Training</h3>
-            <p>You get the finished tool, a short walkthrough, and documentation — yours to keep and run for free, forever. No subscription, no per-use fees.</p>
-          </div>
-        </div>
-
-        <div class="run-flow-head reveal">
-          <h3>Once it's built, every run looks like this</h3>
+          <h2>One click, and the whole run happens</h2>
         </div>
         <div class="runflow" id="run-flow">
           <svg class="runflow__wires" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true" focusable="false">
@@ -169,126 +157,124 @@
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
           Runs on your own machine, as often as you like — no subscription, no per-use fee.
         </p>
-      </div>
-    </section>
 
-    <!-- ============================================================ SAMPLE PROJECTS -->
-    <section id="services" class="tone-light section-pad">
-      <div class="container">
-        <div class="section-head reveal">
-          <p class="eyebrow">Sample Projects</p>
-          <h2>Illustrative examples of the kind of work I build</h2>
-          <p class="text-muted">These are representative examples to show scope and approach — not results from a specific client engagement.</p>
+        <div class="section-head section-head--center reveal" style="margin-top: var(--space-2xl);">
+          <p class="eyebrow" style="justify-content:center;">The Engagement</p>
+          <h2>Getting there takes four steps</h2>
         </div>
-        <div class="grid grid-2">
-          <article class="card reveal">
-            <div class="project-card__meta">
-              <span class="project-card__pill">Illustrative example</span>
-              <span class="project-card__pill">Excel · VBA</span>
-            </div>
-            <h3>Month-End Close Workbook</h3>
-            <p class="text-muted">A CPA firm's staff manually copied numbers from 6 client sub-ledgers into a master close file every month. The rebuilt workbook pulls each source automatically, applies standard adjusting entries, and highlights any account that doesn't tie to prior month within a set tolerance.</p>
-            <div class="project-card__result">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
-              <span>A multi-day manual roll-up becomes a same-day review.</span>
-            </div>
-          </article>
-          <article class="card reveal">
-            <div class="project-card__meta">
-              <span class="project-card__pill">Illustrative example</span>
-              <span class="project-card__pill">Excel · Python</span>
-            </div>
-            <h3>Cash Reconciliation Tool</h3>
-            <p class="text-muted">A small business matched a bank statement export against internal records by eye, line by line. The tool auto-matches on amount, date window, and reference text, then produces a short exceptions list of only what still needs a human look.</p>
-            <div class="project-card__result">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
-              <span>Hundreds of lines matched automatically; only true exceptions need review.</span>
-            </div>
-          </article>
-          <article class="card reveal">
-            <div class="project-card__meta">
-              <span class="project-card__pill">Illustrative example</span>
-              <span class="project-card__pill">Excel · Office Scripts</span>
-            </div>
-            <h3>Invoice &amp; AR Tracker</h3>
-            <p class="text-muted">Overdue client invoices were tracked in someone's memory and a scattered inbox. The new tracker ages every open invoice automatically and generates a ready-to-send follow-up list every Monday morning.</p>
-            <div class="project-card__result">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
-              <span>Nothing falls through the cracks — the sheet does the chasing.</span>
-            </div>
-          </article>
-          <article class="card reveal">
-            <div class="project-card__meta">
-              <span class="project-card__pill">Illustrative example</span>
-              <span class="project-card__pill">Word · PDF · Python</span>
-            </div>
-            <h3>Mail-Merge / PDF Renamer</h3>
-            <p class="text-muted">Engagement letters were built one at a time in Word, printed to PDF, and renamed by hand for 80+ clients each season. The new script merges the template against a client list and outputs correctly-named, ready-to-send PDFs in one run.</p>
-            <div class="project-card__result">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
-              <span>A week of tedious admin work becomes a single click.</span>
-            </div>
-          </article>
+        <div class="process-steps">
+          <div class="process-step reveal">
+            <span class="process-step__num" aria-hidden="true">01</span>
+            <h3>Discovery Call</h3>
+            <p>A free 20-30 minute call to understand your current process and where the time actually goes.</p>
+          </div>
+          <div class="process-step reveal">
+            <span class="process-step__num" aria-hidden="true">02</span>
+            <h3>Scoped Proposal</h3>
+            <p>You get a clear, written scope and quote before any work begins — no surprises, no hourly clock.</p>
+          </div>
+          <div class="process-step reveal">
+            <span class="process-step__num" aria-hidden="true">03</span>
+            <h3>Build &amp; Review</h3>
+            <p>You don't need to hand over real or live files to get started — I build and test on templates or sanitized sample data, with checkpoints along the way so you can review progress.</p>
+          </div>
+          <div class="process-step reveal">
+            <span class="process-step__num" aria-hidden="true">04</span>
+            <h3>Handoff &amp; Training</h3>
+            <p>You get the finished tool, a short walkthrough, and documentation — yours to keep and run for free, forever. No subscription, no per-use fees.</p>
+          </div>
+        </div>
+
+        <div class="run-flow-head reveal">
+          <h3>Once it's built, every run looks like this</h3>
         </div>
       </div>
     </section>
 
     <!-- ============================================================ FAQ -->
-    <section id="faq" class="tone-light tone-light--raised section-pad" style="border-block: 1px solid var(--color-line);">
+    <section id="faq" class="tone-dark section-pad" style="border-block: 1px solid var(--color-ink-line);">
       <div class="container">
-        <div class="section-head reveal">
-          <p class="eyebrow">Frequently Asked Questions</p>
+        <div class="section-head section-head--center reveal">
+          <p class="eyebrow" style="justify-content:center;">Frequently Asked Questions</p>
           <h2>Good to know before reaching out</h2>
         </div>
-        <div class="faq reveal" id="faq-list">
-          <div class="faq__item" data-open="false">
-            <button class="faq__question" aria-expanded="false">
-              <span>What does a typical project cost?</span>
-              <svg class="faq__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            </button>
-            <div class="faq__answer"><div class="faq__answer-inner">Every project is scoped individually after a free consultation, and you'll always get a fixed quote in writing before any work starts — reach out for a custom quote based on what you need.</div></div>
-          </div>
-          <div class="faq__item" data-open="false">
-            <button class="faq__question" aria-expanded="false">
-              <span>How long does a project take?</span>
-              <svg class="faq__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            </button>
-            <div class="faq__answer"><div class="faq__answer-inner">It depends on scope, but most single-workflow automations (a close workbook, a reconciliation tool, a mail-merge script) are delivered in 1-3 weeks after the proposal is approved.</div></div>
-          </div>
-          <div class="faq__item" data-open="false">
-            <button class="faq__question" aria-expanded="false">
-              <span>Will you need access to our systems or data?</span>
-              <svg class="faq__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            </button>
-            <div class="faq__answer"><div class="faq__answer-inner">Usually not directly — most projects are built and tested against sanitized sample or historical files, so you control exactly what's shared and when.</div></div>
-          </div>
-          <div class="faq__item" data-open="false">
-            <button class="faq__question" aria-expanded="false">
-              <span>How is confidentiality handled?</span>
-              <svg class="faq__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            </button>
-            <div class="faq__answer"><div class="faq__answer-inner">A confidentiality agreement can be signed before any files are shared, and your data is never reused, stored beyond project needs, or shared with anyone else.</div></div>
-          </div>
-          <div class="faq__item" data-open="false">
-            <button class="faq__question" aria-expanded="false">
-              <span>What tools and platforms do you work in?</span>
-              <svg class="faq__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            </button>
-            <div class="faq__answer"><div class="faq__answer-inner">Mainly Excel (formulas, VBA, Office Scripts), Word, and PDF generation, often glued together with Python or AI-assisted scripting when it's the better tool for the job. No new software for your team to learn unless you want one.</div></div>
-          </div>
-          <div class="faq__item" data-open="false">
-            <button class="faq__question" aria-expanded="false">
-              <span>Do you offer support after delivery?</span>
-              <svg class="faq__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            </button>
-            <div class="faq__answer"><div class="faq__answer-inner">Yes — every project includes a short training walkthrough and a post-delivery support window, and ongoing support or future enhancements can be arranged after that.</div></div>
+        <div class="faq-console reveal" id="faq-console">
+          <ul class="faq-console__list" role="tablist" aria-label="Frequently asked questions" aria-orientation="vertical">
+            <li>
+              <button class="faq-console__q" type="button" role="tab" id="faq-tab-0" aria-controls="faq-panel-0" aria-selected="true">
+                <span class="faq-console__prompt" aria-hidden="true">&gt;</span>
+                <span class="faq-console__q-text">What does a typical project cost?</span>
+              </button>
+            </li>
+            <li>
+              <button class="faq-console__q" type="button" role="tab" id="faq-tab-1" aria-controls="faq-panel-1" aria-selected="false" tabindex="-1">
+                <span class="faq-console__prompt" aria-hidden="true">&gt;</span>
+                <span class="faq-console__q-text">How long does a project take?</span>
+              </button>
+            </li>
+            <li>
+              <button class="faq-console__q" type="button" role="tab" id="faq-tab-2" aria-controls="faq-panel-2" aria-selected="false" tabindex="-1">
+                <span class="faq-console__prompt" aria-hidden="true">&gt;</span>
+                <span class="faq-console__q-text">Will you need access to our systems or data?</span>
+              </button>
+            </li>
+            <li>
+              <button class="faq-console__q" type="button" role="tab" id="faq-tab-3" aria-controls="faq-panel-3" aria-selected="false" tabindex="-1">
+                <span class="faq-console__prompt" aria-hidden="true">&gt;</span>
+                <span class="faq-console__q-text">How is confidentiality handled?</span>
+              </button>
+            </li>
+            <li>
+              <button class="faq-console__q" type="button" role="tab" id="faq-tab-4" aria-controls="faq-panel-4" aria-selected="false" tabindex="-1">
+                <span class="faq-console__prompt" aria-hidden="true">&gt;</span>
+                <span class="faq-console__q-text">What tools and platforms do you work in?</span>
+              </button>
+            </li>
+            <li>
+              <button class="faq-console__q" type="button" role="tab" id="faq-tab-5" aria-controls="faq-panel-5" aria-selected="false" tabindex="-1">
+                <span class="faq-console__prompt" aria-hidden="true">&gt;</span>
+                <span class="faq-console__q-text">Do you offer support after delivery?</span>
+              </button>
+            </li>
+          </ul>
+          <div class="faq-console__screen">
+            <div class="faq-console__bar" aria-hidden="true">
+              <span class="faq-console__dots"><i></i><i></i><i></i></span>
+              <span class="faq-console__path">answers.sh</span>
+            </div>
+            <div class="faq-console__body">
+            <div class="faq-console__panel" role="tabpanel" id="faq-panel-0" aria-labelledby="faq-tab-0" tabindex="0">
+              <p class="faq-console__cmd" aria-hidden="true">$ explain --cost</p>
+              <p class="faq-console__answer">Every project is scoped individually after a free consultation, and you'll always get a fixed quote in writing before any work starts — reach out for a custom quote based on what you need.</p>
+            </div>
+            <div class="faq-console__panel" role="tabpanel" id="faq-panel-1" aria-labelledby="faq-tab-1" tabindex="0" hidden>
+              <p class="faq-console__cmd" aria-hidden="true">$ explain --timeline</p>
+              <p class="faq-console__answer">It depends on scope, but most single-workflow automations (a close workbook, a reconciliation tool, a mail-merge script) are delivered in 1-3 weeks after the proposal is approved.</p>
+            </div>
+            <div class="faq-console__panel" role="tabpanel" id="faq-panel-2" aria-labelledby="faq-tab-2" tabindex="0" hidden>
+              <p class="faq-console__cmd" aria-hidden="true">$ explain --access</p>
+              <p class="faq-console__answer">Usually not directly — most projects are built and tested against sanitized sample or historical files, so you control exactly what's shared and when.</p>
+            </div>
+            <div class="faq-console__panel" role="tabpanel" id="faq-panel-3" aria-labelledby="faq-tab-3" tabindex="0" hidden>
+              <p class="faq-console__cmd" aria-hidden="true">$ explain --confidentiality</p>
+              <p class="faq-console__answer">A confidentiality agreement can be signed before any files are shared, and your data is never reused, stored beyond project needs, or shared with anyone else.</p>
+            </div>
+            <div class="faq-console__panel" role="tabpanel" id="faq-panel-4" aria-labelledby="faq-tab-4" tabindex="0" hidden>
+              <p class="faq-console__cmd" aria-hidden="true">$ explain --tooling</p>
+              <p class="faq-console__answer">Mainly Excel (formulas, VBA, Office Scripts), Word, and PDF generation, often glued together with Python or AI-assisted scripting when it's the better tool for the job. No new software for your team to learn unless you want one.</p>
+            </div>
+            <div class="faq-console__panel" role="tabpanel" id="faq-panel-5" aria-labelledby="faq-tab-5" tabindex="0" hidden>
+              <p class="faq-console__cmd" aria-hidden="true">$ explain --support</p>
+              <p class="faq-console__answer">Yes — every project includes a short training walkthrough and a post-delivery support window, and ongoing support or future enhancements can be arranged after that.</p>
+            </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ============================================================ CONTACT -->
-    <section id="contact" class="tone-light section-pad">
+    <section id="contact" class="tone-dark section-pad">
       <div class="container">
         <div class="contact">
           <div class="reveal">
@@ -369,7 +355,7 @@
     <div class="container footer__inner">
       <a class="logo" href="#top">
         <span class="logo__mark" aria-hidden="true">fx</span>
-        Narek Automations
+        <span class="logo__word">Narek Automations</span>
       </a>
       <nav class="footer__links" aria-label="Footer">
         <a href="#services">Services</a>

@@ -34,19 +34,13 @@ section {
    them. Imperceptible over a flat opaque background (cards etc.), so
    safe to apply everywhere these appear, not just where the grid shows
    through. */
-html.webgl-grid-active .tone-light .section-head h2,
-html.webgl-grid-active .tone-light .section-head p,
-html.webgl-grid-active .tone-light .eyebrow,
-html.webgl-grid-active .tone-light .contact > .reveal > h2,
-html.webgl-grid-active .tone-light .contact > .reveal > p {
-  text-shadow: 0 0 18px rgba(248, 249, 251, 1), 0 0 8px rgba(248, 249, 251, 1), 0 0 3px rgba(248, 249, 251, 1);
-}
-
 html.webgl-grid-active .tone-dark .section-head h2,
 html.webgl-grid-active .tone-dark .section-head p,
 html.webgl-grid-active .tone-dark .eyebrow,
 html.webgl-grid-active .hero h1,
 html.webgl-grid-active .run-flow-head h3,
+html.webgl-grid-active .contact > div > h2,
+html.webgl-grid-active .contact > div > p,
 html.webgl-grid-active .badge {
   text-shadow: 0 0 20px rgba(11, 18, 32, 0.95), 0 0 9px rgba(11, 18, 32, 0.95), 0 0 3px rgba(11, 18, 32, 0.95);
 }
@@ -146,28 +140,6 @@ html.webgl-grid-active footer.tone-dark {
   color: var(--color-ink-text-muted);
 }
 
-.tone-light {
-  background: var(--color-paper);
-  color: var(--color-text);
-}
-
-/* Light sections need SOME transparency too, or the grid can never show
-   through them no matter what opacity it renders at underneath — a fully
-   opaque background blocks 100% of it regardless. Cards/forms/FAQ items
-   sitting on top keep their own solid backgrounds (untouched here), so
-   only the open space around them reveals the ambient grid. */
-html.webgl-grid-active main .tone-light {
-  background: rgba(248, 249, 251, 0.8);
-}
-
-.tone-light--raised {
-  background: var(--color-paper-raised);
-}
-
-html.webgl-grid-active main .tone-light--raised {
-  background: rgba(255, 255, 255, 0.8);
-}
-
 .text-muted {
   color: var(--color-text-muted);
 }
@@ -196,30 +168,49 @@ html.webgl-grid-active main .tone-light--raised {
   padding-block: var(--space-xs);
 }
 
-.nav__links {
-  display: flex;
-  gap: var(--space-md);
-  font-size: var(--text-sm);
-  color: var(--color-ink-text-muted);
-}
-
-.nav__links a {
-  transition: color var(--duration-fast) var(--ease-out);
-}
-
-.nav__links a:hover {
-  color: var(--color-ink-text);
-}
-
+/* The inline link list is gone — everything but the primary CTA now
+   lives in the dropdown (.nav-menu in components.css). */
 .nav__actions {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
 }
 
-@media (max-width: 760px) {
-  .nav__links {
+/* Three things share one line here — wordmark, CTA, menu box — so on a
+   narrow phone they all give up a little rather than wrapping. */
+@media (max-width: 620px) {
+  .logo {
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .nav__actions .btn--sm {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Narrower still (360-class phones, folded devices): squeeze everything a
+   notch further so the menu box stays fully on screen. */
+@media (max-width: 400px) {
+  .nav__inner {
+    gap: var(--space-2xs);
+  }
+
+  /* Mark only in the nav: the wordmark is where the CTA and the menu box
+     have to get their room from. The link keeps its accessible name from
+     aria-label. The footer's wordmark stays — it has the space. */
+  .nav .logo__word {
     display: none;
+  }
+
+  .nav__actions {
+    gap: var(--space-3xs);
+  }
+
+  .nav__actions .btn--sm {
+    font-size: 0.64rem;
+    padding: 0.5rem 0.6rem;
   }
 }
 

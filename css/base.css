@@ -19,7 +19,9 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-paper);
+  /* Ink, not paper: every section is on the dark grid now, so this is
+     what shows through during load and past the scroll ends. */
+  background: var(--color-ink);
   color: var(--color-text);
   font-family: var(--font-body);
   font-size: var(--text-base);

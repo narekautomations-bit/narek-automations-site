@@ -5,9 +5,11 @@ import { initKineticText } from "./kinetic-text.js";
 import { initMagneticButtons } from "./magnetic.js";
 import { initPageGrid } from "./interactive-grid.js";
 import { initMatrixRain } from "./matrix-rain.js";
+import { initMatrixFall } from "./matrix-fall.js";
 import { initProcessDiagram } from "./process-diagram.js";
 import { initContactForm } from "./contact-form.js";
-import { initFaqAccordion } from "./faq-accordion.js";
+import { initFaqConsole } from "./faq-console.js";
+import { initNavMenu } from "./nav-menu.js";
 
 function injectContactInfo() {
   const emailLink = document.getElementById("contact-email-link");
@@ -42,13 +44,15 @@ function injectFooterYear() {
 document.addEventListener("DOMContentLoaded", () => {
   injectContactInfo();
   injectFooterYear();
+  initNavMenu();
   initSmoothScroll();
   initMotion();
   initKineticText();
   initMagneticButtons();
   initPageGrid();
   initMatrixRain();
+  initMatrixFall();
   initProcessDiagram();
   initContactForm();
-  initFaqAccordion();
+  initFaqConsole();
 });

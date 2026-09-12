@@ -56,6 +56,9 @@ change required, no rewrite:
 - `js/kinetic-text.js` — hero headline word-cascade (SplitText)
 - `js/magnetic.js` — magnetic pull on primary buttons
 - `js/interactive-grid.js` — page-wide cursor/touch-reactive WebGL grid
-- `js/matrix-rain.js` — builds the hero's ambient log-rain markup (CSS animates it)
+- `js/matrix-rain.js`, `matrix-fall.js` — build the hero's two matrix layers
+  (horizontal log rain and vertical fall); CSS does all the animating
 - `js/process-diagram.js` — scroll trigger for the run-flow diagram
-- `js/contact-form.js`, `faq-accordion.js` — remaining interactive features
+- `js/faq-console.js` — the FAQ terminal (tablist + answer typing)
+- `js/nav-menu.js` — the nav's dropdown
+- `js/contact-form.js` — client-side validation and submission
