@@ -16,6 +16,17 @@
   white-space: nowrap;
 }
 
+/* Leading icons (e.g. the Text Us message glyph). Sized to the button's
+   own font size so a labelled icon never outgrows its label. */
+.btn svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  flex-shrink: 0;
+}
+
 .btn:hover {
   transform: translateY(-1px);
 }
@@ -135,6 +146,9 @@
   align-items: center;
   overflow: hidden;
   position: relative;
+  /* Own stacking context so the log-rain layer can sit behind the hero
+     content without competing with the page-wide fixed WebGL canvas. */
+  isolation: isolate;
 }
 
 .page-webgl-canvas {
@@ -149,6 +163,7 @@
 
 .hero__inner {
   position: relative;
+  z-index: 1; /* above .matrix-rain */
   display: grid;
   grid-template-columns: 1.4fr 0.6fr;
   gap: var(--space-xl);
@@ -192,6 +207,21 @@
   flex-wrap: wrap;
   gap: var(--space-sm);
   margin: var(--space-sm) 0;
+}
+
+/* The hero now sits over both the log rain and the WebGL grid, and the
+   default hairline border on the secondary CTA vanishes into that
+   texture. Give it a readable edge and a backdrop of its own so the two
+   calls to action read as an equal pair. */
+.hero__actions .btn--ghost-dark {
+  border-color: rgba(95, 224, 160, 0.45);
+  background: rgba(11, 18, 32, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.hero__actions .btn--ghost-dark:hover {
+  border-color: rgba(95, 224, 160, 0.85);
+  background: rgba(11, 18, 32, 0.78);
 }
 
 /* Mobile: the tight rhythm above exists to fit the hero within one desktop
@@ -1163,5 +1193,354 @@
   30% {
     transform: translateY(-4px);
     opacity: 1;
+  }
+}
+
+/* ============================================================
+   Matrix log rain (hero ambient background)
+   ------------------------------------------------------------
+   Columns of faint monospace "automation log" lines drifting upward,
+   each line typing itself in. Built once by js/matrix-rain.js; every bit
+   of motion below is CSS.
+
+   --rain-alpha is the single legibility knob: the layer is kept faint
+   enough to sit safely under the headline at any breakpoint, rather than
+   trying to dodge the text.
+   ============================================================ */
+.matrix-rain {
+  --rain-alpha: 0.17;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #5fe0a0;
+  opacity: 0;
+  transition: opacity 1.6s var(--ease-out);
+  /* Lines emerge and dissolve instead of clipping against the hero edges. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 78%, transparent);
+}
+
+.matrix-rain[data-ready] {
+  opacity: 1;
+}
+
+.matrix-rain__col {
+  position: absolute;
+  top: 0;
+  left: var(--col-x);
+  opacity: calc(var(--rain-alpha) * var(--col-depth));
+}
+
+.matrix-rain__track {
+  /* Two identical line sets stacked; the drift travels exactly one set. */
+  animation: rain-drift var(--drift-duration) linear var(--drift-delay) infinite;
+  will-change: transform;
+}
+
+.matrix-rain__line {
+  display: block;
+  line-height: 21px; /* must match LINE_PITCH in js/matrix-rain.js */
+  white-space: pre;
+  /* Typed in by clipping from the right in whole-character steps. */
+  clip-path: inset(0 100% 0 0);
+  animation: rain-type 11s steps(var(--type-steps), end) var(--type-delay) infinite;
+}
+
+@keyframes rain-drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes rain-type {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    color: #c8ffe2;
+  }
+  16% {
+    clip-path: inset(0 0 0 0);
+    color: #c8ffe2;
+  }
+  /* Freshly typed lines cool off to the ambient green, matrix-style, so
+     the eye reads a leading edge rather than a uniform block of text. */
+  34% {
+    color: #5fe0a0;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    color: #5fe0a0;
+  }
+}
+
+@media (max-width: 820px) {
+  .matrix-rain {
+    --rain-alpha: 0.13;
+    font-size: 0.62rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the texture, drop the motion: every line sits fully typed and
+     still. (The WebGL grid bails out entirely under this preference, so
+     this is all that's left behind the hero.) */
+  .matrix-rain__track,
+  .matrix-rain__line {
+    animation: none;
+  }
+
+  .matrix-rain__line {
+    clip-path: none;
+  }
+}
+
+/* ============================================================
+   Run flow diagram ("How It Works")
+   ------------------------------------------------------------
+   Static HTML + inline SVG connectors. js/process-diagram.js adds
+   .is-visible on scroll-into-view; everything below is CSS.
+   ============================================================ */
+.run-flow-head {
+  text-align: center;
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.run-flow-head h3 {
+  font-size: var(--text-lg);
+  color: var(--color-ink-text);
+}
+
+.flow {
+  --flow-gap: 2.75rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--flow-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.flow-node {
+  position: relative;
+  transition: opacity var(--duration-slow) var(--ease-out), transform var(--duration-slow) var(--ease-out);
+  transition-delay: calc(var(--flow-i) * 110ms);
+}
+
+/* Hidden only once the module has confirmed it's driving the reveal, so
+   a script failure leaves the diagram visible instead of blank. */
+.flow[data-flow-ready] .flow-node {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.flow[data-flow-ready].is-visible .flow-node {
+  opacity: 1;
+  transform: none;
+}
+
+.flow-node__inner {
+  height: 100%;
+  background: var(--color-ink-raised);
+  border: 1px solid var(--color-ink-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  transition: border-color var(--duration-base) var(--ease-out);
+}
+
+.flow.is-visible .flow-node__inner {
+  /* Idle float lives on the inner box so it can't collide with the
+     translateY the enter transition puts on .flow-node itself. */
+  animation: flow-float 7s ease-in-out infinite;
+  animation-delay: calc(var(--flow-i) * 0.85s);
+}
+
+.flow-node:hover .flow-node__inner {
+  border-color: rgba(95, 224, 160, 0.4);
+}
+
+.flow-node__kicker {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5fe0a0;
+  margin-bottom: var(--space-2xs);
+}
+
+.flow-node h4 {
+  font-size: var(--text-sm);
+  color: var(--color-ink-text);
+  margin-bottom: var(--space-3xs);
+}
+
+.flow-node p {
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--color-ink-text-muted);
+  margin: 0;
+}
+
+/* --- Connectors ------------------------------------------------------ */
+.flow-node__link {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  width: var(--flow-gap);
+  height: 10px;
+  margin-top: -5px;
+  pointer-events: none;
+}
+
+.flow-node__link::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: #5fe0a0;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+  transition-delay: calc(var(--flow-i) * 110ms + 560ms);
+}
+
+.flow[data-flow-ready].is-visible .flow-node__link::after,
+.flow:not([data-flow-ready]) .flow-node__link::after {
+  opacity: 0.85;
+}
+
+.flow-node__link svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.flow-node__line,
+.flow-node__spark {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.flow-node__line {
+  stroke: rgba(95, 224, 160, 0.55);
+  stroke-width: 2;
+  /* Path is 100 user units long, so dash lengths read as percentages. */
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset var(--duration-slow) var(--ease-out);
+  transition-delay: calc(var(--flow-i) * 110ms + 200ms);
+}
+
+.flow[data-flow-ready].is-visible .flow-node__line,
+.flow:not([data-flow-ready]) .flow-node__line {
+  stroke-dashoffset: 0;
+}
+
+.flow-node__spark {
+  stroke: #8affc4;
+  stroke-width: 2.5;
+  /* A short dash on a long gap: animating the offset walks it along the
+     line, which reads as data moving between the stages. */
+  stroke-dasharray: 10 90;
+  stroke-dashoffset: 100;
+  opacity: 0;
+}
+
+.flow.is-visible .flow-node__spark {
+  animation: flow-spark 3.4s linear infinite;
+  animation-delay: calc(var(--flow-i) * 0.5s);
+}
+
+@keyframes flow-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes flow-spark {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  85%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+.flow-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+  margin-top: var(--space-md);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-ink-text-muted);
+  text-align: center;
+}
+
+.flow-note svg {
+  width: 16px;
+  height: 16px;
+  stroke: #5fe0a0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .flow {
+    --flow-gap: 2.25rem;
+    grid-template-columns: 1fr;
+  }
+
+  .flow-note {
+    flex-direction: column;
+    gap: var(--space-3xs);
+  }
+
+  /* Stacked layout: same connector element, rotated a quarter turn about
+     its own left edge so it runs down through the gap into the node
+     below — including the spark, which keeps flowing the right way. */
+  .flow-node__link {
+    right: auto;
+    left: 50%;
+    top: calc(-1 * var(--flow-gap));
+    margin-top: 0;
+    transform-origin: 0 50%;
+    transform: rotate(90deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-node,
+  .flow-node__line {
+    transition: none;
+  }
+
+  .flow.is-visible .flow-node__inner,
+  .flow.is-visible .flow-node__spark {
+    animation: none;
   }
 }

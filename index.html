@@ -37,6 +37,8 @@
   <main id="main">
     <!-- ============================================================ HERO -->
     <section id="top" class="hero tone-dark">
+      <!-- Ambient automation-log rain; populated by js/matrix-rain.js -->
+      <div class="matrix-rain" id="matrix-rain" aria-hidden="true"></div>
       <div class="container hero__inner">
         <div>
           <p class="eyebrow hero__eyebrow">Office Automation · Los Angeles, CA</p>
@@ -54,7 +56,10 @@
 
           <div class="hero__actions reveal">
             <a class="btn btn--primary" href="#contact" data-magnetic>Book a Free Consultation</a>
-            <a class="btn btn--ghost-dark" href="#how-it-works" data-magnetic>See How It Works</a>
+            <a class="btn btn--ghost-dark" id="hero-sms-link" href="#contact" data-magnetic>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25A2.25 2.25 0 014.5 6h15a2.25 2.25 0 012.25 2.25v7.5A2.25 2.25 0 0119.5 18h-8.25L6.75 21.75V18H4.5a2.25 2.25 0 01-2.25-2.25v-7.5z"/><path stroke-linecap="round" d="M7.5 10.5h9M7.5 13.5h5.25"/></svg>
+              Text Us
+            </a>
           </div>
 
           <div class="badge-row reveal">
@@ -117,6 +122,47 @@
             <p>You get the finished tool, a short walkthrough, and documentation — yours to keep and run for free, forever. No subscription, no per-use fees.</p>
           </div>
         </div>
+
+        <div class="run-flow-head reveal">
+          <h3>Once it's built, every run looks like this</h3>
+        </div>
+        <ol class="flow" id="run-flow">
+          <li class="flow-node" style="--flow-i: 0;">
+            <div class="flow-node__inner">
+              <span class="flow-node__kicker">input</span>
+              <h4>Your files go in</h4>
+              <p>The exports, statements, and templates you already work with — dropped in a folder or opened as usual. Nothing changes about where your data lives.</p>
+            </div>
+          </li>
+          <li class="flow-node" style="--flow-i: 1;">
+            <span class="flow-node__link" aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none"><path class="flow-node__line" vector-effect="non-scaling-stroke" d="M0 5H100"/><path class="flow-node__spark" vector-effect="non-scaling-stroke" d="M0 5H100"/></svg></span>
+            <div class="flow-node__inner">
+              <span class="flow-node__kicker">run</span>
+              <h4>One click runs it</h4>
+              <p>The tool reads every file, matches the records, and rebuilds the workbook, letters, or PDFs in seconds instead of hours.</p>
+            </div>
+          </li>
+          <li class="flow-node" style="--flow-i: 2;">
+            <span class="flow-node__link" aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none"><path class="flow-node__line" vector-effect="non-scaling-stroke" d="M0 5H100"/><path class="flow-node__spark" vector-effect="non-scaling-stroke" d="M0 5H100"/></svg></span>
+            <div class="flow-node__inner">
+              <span class="flow-node__kicker">check</span>
+              <h4>Checks catch the exceptions</h4>
+              <p>Built-in tie-outs and validation surface anything that doesn't balance or is missing, so problems get flagged instead of quietly copied forward.</p>
+            </div>
+          </li>
+          <li class="flow-node" style="--flow-i: 3;">
+            <span class="flow-node__link" aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none"><path class="flow-node__line" vector-effect="non-scaling-stroke" d="M0 5H100"/><path class="flow-node__spark" vector-effect="non-scaling-stroke" d="M0 5H100"/></svg></span>
+            <div class="flow-node__inner">
+              <span class="flow-node__kicker">output</span>
+              <h4>Finished output, ready to send</h4>
+              <p>Formatted, named, and filed the way your firm already does it — ready to review and send, not ready to clean up.</p>
+            </div>
+          </li>
+        </ol>
+        <p class="flow-note reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
+          Runs on your own machine, as often as you like — no subscription, no per-use fee.
+        </p>
       </div>
     </section>
 
@@ -251,6 +297,10 @@
               <a class="contact__direct-item" id="contact-phone-link" href="#">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 002.25-2.25v-1.372a1.5 1.5 0 00-1.06-1.435l-3.14-1.047a1.5 1.5 0 00-1.591.44l-.813 1.017a11.25 11.25 0 01-6.096-6.096l1.017-.812a1.5 1.5 0 00.44-1.592L8.856 3.31A1.5 1.5 0 007.421 2.25H6.05A2.25 2.25 0 003.8 4.5v.75"/></svg>
                 <span id="contact-phone-text">(555) 555-5555</span>
+              </a>
+              <a class="contact__direct-item" id="contact-sms-link" href="#contact-form">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25A2.25 2.25 0 014.5 6h15a2.25 2.25 0 012.25 2.25v7.5A2.25 2.25 0 0119.5 18h-8.25L6.75 21.75V18H4.5a2.25 2.25 0 01-2.25-2.25v-7.5z"/></svg>
+                <span>Text us — <span id="contact-sms-text">(555) 555-5555</span></span>
               </a>
               <div class="contact__direct-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>

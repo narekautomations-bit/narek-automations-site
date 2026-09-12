@@ -86,7 +86,7 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     return;
   }
 
-  let renderer, scene, camera, uniforms, clock;
+  let renderer, scene, camera, uniforms, clock, mesh, cellH;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !isCompact });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isCompact ? 1.5 : 2));
@@ -98,6 +98,9 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
 
     const cols = isCompact ? 26 : 44;
     const rows = isCompact ? 34 : 58;
+    // One grid cell. The mesh drifts by exactly this much per loop, which
+    // makes a finite plane read as an endlessly flowing grid.
+    cellH = planeH / rows;
 
     const geometry = new THREE.PlaneGeometry(planeW, planeH, cols, rows);
     uniforms = {
@@ -117,7 +120,7 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
       vertexShader: VERTEX_SHADER,
       fragmentShader: FRAGMENT_SHADER,
     });
-    const mesh = new THREE.Mesh(geometry, material);
+    mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
 
     scene.rotation.x = -0.4;
@@ -193,6 +196,8 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
 
   const SPRING_STIFFNESS = 140;
   const SPRING_DAMPING = 16;
+  // Slow enough to read as a drift rather than motion you track.
+  const GRID_DRIFT_SPEED = 0.1;
 
   function frame() {
     const dt = Math.min(0.05, clock.getDelta());
@@ -223,9 +228,19 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
       mousePos[axis] += mouseVel[axis] * dt;
     });
 
+    // Flow the grid lines themselves, matrix-rain style. Wrapping at
+    // exactly one cell height makes the finite plane read as an endless
+    // scrolling grid with no visible seam.
+    const elapsed = clock.getElapsedTime();
+    const driftY = (elapsed * GRID_DRIFT_SPEED) % cellH;
+    mesh.position.y = driftY;
+
     scene.rotation.x = currentTilt;
-    uniforms.uTime.value = clock.getElapsedTime();
-    uniforms.uMouse.value.set(mousePos.x, mousePos.y);
+    uniforms.uTime.value = elapsed;
+    // The bump is computed from the mesh's *local* vertex positions, so the
+    // drift has to be subtracted out of the pointer position — otherwise the
+    // bump would slide along with the grid and snap back every wrap.
+    uniforms.uMouse.value.set(mousePos.x, mousePos.y - driftY);
     uniforms.uOpacity.value = opacity;
     uniforms.uAmplitude.value = currentAmplitude;
     uniforms.uRippleBoost.value = boost;
