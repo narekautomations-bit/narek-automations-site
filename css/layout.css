@@ -29,6 +29,28 @@ section {
   text-align: center;
 }
 
+/* Keep headings/eyebrows/lede text reading clearly above the animated
+   background: a soft same-tone halo rather than hiding the grid behind
+   them. Imperceptible over a flat opaque background (cards etc.), so
+   safe to apply everywhere these appear, not just where the grid shows
+   through. */
+html.webgl-grid-active .tone-light .section-head h2,
+html.webgl-grid-active .tone-light .section-head p,
+html.webgl-grid-active .tone-light .eyebrow,
+html.webgl-grid-active .tone-light .contact > .reveal > h2,
+html.webgl-grid-active .tone-light .contact > .reveal > p {
+  text-shadow: 0 0 14px rgba(248, 249, 251, 0.95), 0 0 4px rgba(248, 249, 251, 0.95);
+}
+
+html.webgl-grid-active .tone-dark .section-head h2,
+html.webgl-grid-active .tone-dark .section-head p,
+html.webgl-grid-active .tone-dark .eyebrow,
+html.webgl-grid-active .hero h1,
+html.webgl-grid-active .hero__lede,
+html.webgl-grid-active .footer__inner {
+  text-shadow: 0 0 16px rgba(11, 18, 32, 0.85), 0 0 5px rgba(11, 18, 32, 0.85);
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -123,7 +145,7 @@ html.webgl-grid-active footer.tone-dark {
    sitting on top keep their own solid backgrounds (untouched here), so
    only the open space around them reveals the ambient grid. */
 html.webgl-grid-active main .tone-light {
-  background: rgba(248, 249, 251, 0.86);
+  background: rgba(248, 249, 251, 0.72);
 }
 
 .tone-light--raised {
@@ -131,7 +153,7 @@ html.webgl-grid-active main .tone-light {
 }
 
 html.webgl-grid-active main .tone-light--raised {
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .text-muted {
