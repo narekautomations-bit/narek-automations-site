@@ -194,18 +194,23 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
 
     const rand = makeRandom(0xc1745);
     const towerCount = isCompact ? 14 : 26;
+    // Half-width of the frame, in world units, at a mid-skyline depth.
+    const frameHalfWidth = Math.tan((45 * Math.PI) / 360) * 8 * (window.innerWidth / window.innerHeight);
+    const avenue = Math.max(0.8, Math.min(2.1, frameHalfWidth * 0.62));
+    const spread = Math.max(2.4, frameHalfWidth * 2.1);
     for (let i = 0; i < towerCount; i++) {
-      // Alternating sides, never inside x = ±2.1. Page content spans most
-      // of the container, not just its middle, so the avenue has to be
-      // wide enough that towers stay outside the text rather than
-      // crossing it.
+      // Alternating sides, never inside the avenue. On a wide screen the
+      // avenue is wide because page copy spans most of the container; on a
+      // portrait phone the frame is only ~1.5 world units across at these
+      // depths, so the same avenue would push every tower off-screen —
+      // hence scaling both the avenue and the spread by the viewport.
       const side = i % 2 ? 1 : -1;
       const tower = new THREE.LineSegments(shape, skylineMaterial);
       // y is depth up the tilted plane. Starting at 4.5 rather than at the
       // frame edge keeps the near foreground clear and reads as a skyline
       // on the horizon instead of towers looming over the copy.
       const depth = 4.5 + rand() * 9.5;
-      tower.position.set(side * (2.1 + rand() * 5.2), depth, 0);
+      tower.position.set(side * (avenue + rand() * spread), depth, 0);
       const footprintX = 0.16 + rand() * 0.24;
       const footprintY = 0.16 + rand() * 0.24;
       // Nearer towers are drawn shorter so they don't swamp the frame.
@@ -372,7 +377,7 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     // standing on it rather than as more of the same mesh.
     // Deliberately below the grid's own brightness: the skyline is depth,
     // not a foreground element, and page copy has to win over it.
-    skylineMaterial.opacity = Math.min(0.5, opacity * 0.95);
+    skylineMaterial.opacity = Math.min(isCompact ? 0.34 : 0.5, opacity * 0.95);
 
     scene.rotation.x = currentTilt;
     uniforms.uTime.value = elapsed;
