@@ -10,12 +10,12 @@ section {
 }
 
 .section-pad {
-  padding-block: var(--space-2xl);
+  padding-block: var(--space-lg);
 }
 
 @media (max-width: 720px) {
   .section-pad {
-    padding-block: var(--space-xl);
+    padding-block: var(--space-md);
   }
 }
 
@@ -42,7 +42,8 @@ html.webgl-grid-active .run-flow-head h3,
 html.webgl-grid-active .contact > div > h2,
 html.webgl-grid-active .contact > div > p,
 html.webgl-grid-active .contact__direct-item,
-html.webgl-grid-active .flow-note,
+html.webgl-grid-active .steps__item h3,
+html.webgl-grid-active .steps__item p,
 html.webgl-grid-active .badge {
   text-shadow: 0 0 20px rgba(11, 18, 32, 0.95), 0 0 9px rgba(11, 18, 32, 0.95), 0 0 3px rgba(11, 18, 32, 0.95);
 }

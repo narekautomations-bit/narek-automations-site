@@ -23,7 +23,10 @@
 // with the tilt: nothing at the top of the page, a full city by the
 // bottom. The buildings are children of the same scene, so they tilt with
 // the grid and stay locked to its drift, and they leave an avenue down
-// the middle so page content never has to compete with them.
+// the middle so page content never has to compete with them. Each tower
+// also counter-rotates as the page scrolls, so by the bottom it is
+// standing straight up rather than leaning with the plane it sits on, and
+// brightens when the cursor or a finger passes near it.
 //
 // Fails soft: any missing WebGL support, error, or reduced-motion
 // preference just leaves the plain dark section backgrounds in place
@@ -67,27 +70,86 @@ const FRAGMENT_SHADER = `
   }
 `;
 
-// Unit building: x/y in [-0.5, 0.5], z from 0 to 1. Scaling z therefore
-// grows it upward out of the plane with its base staying put. The floor
-// rings are what separate "digital skyscraper" from "wireframe box".
-function buildingGeometry(THREE, rings = 4) {
+// Unit building: x/y in [-0.5, 0.5], z from 0 to 1, so scaling z grows it
+// upward with its base staying put on the plane.
+//
+// A plain twelve-edge box reads as a crate, not a tower. Three things fix
+// that, and they're the same three that make the difference in a real
+// wireframe skyline: a dense run of verticals down every face (the
+// facade), floor rings at a constant *world* spacing so a tall tower
+// visibly has more floors than a short one, and a silhouette that steps
+// back once or twice on the way up, sometimes finishing in a spire.
+function towerGeometry(THREE, rand, worldHeight) {
   const pts = [];
-  const corners = [
-    [-0.5, -0.5],
-    [0.5, -0.5],
-    [0.5, 0.5],
-    [-0.5, 0.5],
-  ];
-  corners.forEach(([x, y]) => pts.push(x, y, 0, x, y, 1));
-  const levels = [0, 1];
-  for (let i = 1; i <= rings; i++) levels.push(i / (rings + 1));
-  levels.forEach((z) => {
+  const seg = (x1, y1, z1, x2, y2, z2) => pts.push(x1, y1, z1, x2, y2, z2);
+
+  // Points around a square, corners included, subdivided per edge. These
+  // are where the verticals run.
+  const perimeter = (half, perEdge) => {
+    const corners = [
+      [-half, -half],
+      [half, -half],
+      [half, half],
+      [-half, half],
+    ];
+    const out = [];
     for (let i = 0; i < 4; i++) {
       const [x1, y1] = corners[i];
       const [x2, y2] = corners[(i + 1) % 4];
-      pts.push(x1, y1, z, x2, y2, z);
+      for (let k = 0; k < perEdge; k++) {
+        const t = k / perEdge;
+        out.push([x1 + (x2 - x1) * t, y1 + (y2 - y1) * t]);
+      }
     }
-  });
+    return out;
+  };
+
+  const style = rand();
+  // [top of tier as a fraction of total height, footprint scale]
+  let tiers;
+  if (style < 0.4) tiers = [[1, 1]];
+  else if (style < 0.78) tiers = [[0.66, 1], [1, 0.64]];
+  else tiers = [[0.54, 1], [0.82, 0.7], [1, 0.42]];
+
+  const perEdge = 2 + Math.floor(rand() * 3);
+  // World units between floors. Constant across the skyline, so floor
+  // density is what tells you how tall something is.
+  const floorSpacing = 0.12;
+  const floors = Math.max(3, Math.round(worldHeight / floorSpacing));
+
+  let base = 0;
+  for (const [top, scale] of tiers) {
+    const half = 0.5 * scale;
+    const ring = perimeter(half, perEdge);
+
+    for (const [x, y] of ring) seg(x, y, base, x, y, top);
+
+    // Corner-square rings only: the verticals already carry the density,
+    // and ringing every perimeter point triples the geometry for nothing.
+    const corners = [
+      [-half, -half],
+      [half, -half],
+      [half, half],
+      [-half, half],
+    ];
+    for (let f = 0; f <= floors; f++) {
+      const z = base + (top - base) * (f / floors);
+      if (z < base - 1e-6 || z > top + 1e-6) continue;
+      for (let i = 0; i < 4; i++) {
+        const [x1, y1] = corners[i];
+        const [x2, y2] = corners[(i + 1) % 4];
+        seg(x1, y1, z, x2, y2, z);
+      }
+    }
+    base = top;
+  }
+
+  // Spire, on the towers that stepped back — an antenna on a flat-topped
+  // slab looks wrong, on a tiered tower it looks like a landmark.
+  if (tiers.length > 1 && rand() < 0.55) {
+    seg(0, 0, 1, 0, 0, 1 + 0.07 + rand() * 0.16);
+  }
+
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
   return geometry;
@@ -136,7 +198,6 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
 
   let renderer, scene, camera, uniforms, clock, mesh, cellH;
   let skyline = null;
-  let skylineMaterial = null;
   const buildings = [];
   try {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !isCompact });
@@ -182,15 +243,18 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     skyline = new THREE.Group();
     scene.add(skyline);
 
-    const shape = buildingGeometry(THREE, 3);
-    skylineMaterial = new THREE.LineBasicMaterial({
-      color: 0x7fe8b4,
-      transparent: true,
-      opacity: 0,
-      // The grid is drawn transparent too; not writing depth keeps the two
-      // from fighting over which is in front at their intersections.
-      depthWrite: false,
-    });
+    // One material per tower rather than one shared: it's 26 tiny objects,
+    // and it's what lets a tower brighten on its own when the pointer is
+    // near it.
+    const makeSkylineMaterial = () =>
+      new THREE.LineBasicMaterial({
+        color: 0x7fe8b4,
+        transparent: true,
+        opacity: 0,
+        // The grid is drawn transparent too; not writing depth keeps the
+        // two from fighting over which is in front at their intersections.
+        depthWrite: false,
+      });
 
     const rand = makeRandom(0xc1745);
     const towerCount = isCompact ? 14 : 26;
@@ -205,16 +269,18 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
       // depths, so the same avenue would push every tower off-screen —
       // hence scaling both the avenue and the spread by the viewport.
       const side = i % 2 ? 1 : -1;
-      const tower = new THREE.LineSegments(shape, skylineMaterial);
       // y is depth up the tilted plane. Starting at 4.5 rather than at the
       // frame edge keeps the near foreground clear and reads as a skyline
       // on the horizon instead of towers looming over the copy.
       const depth = 4.5 + rand() * 9.5;
-      tower.position.set(side * (avenue + rand() * spread), depth, 0);
       const footprintX = 0.16 + rand() * 0.24;
       const footprintY = 0.16 + rand() * 0.24;
       // Nearer towers are drawn shorter so they don't swamp the frame.
       const height = (1.1 + rand() * 3.4) * (0.6 + Math.min(1, depth / 8) * 0.6);
+      // Geometry is per-tower because floor spacing is in world units —
+      // it has to know how tall this one ends up.
+      const tower = new THREE.LineSegments(towerGeometry(THREE, rand, height), makeSkylineMaterial());
+      tower.position.set(side * (avenue + rand() * spread), depth, 0);
       tower.visible = false;
       skyline.add(tower);
       buildings.push({
@@ -254,7 +320,10 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
   const mousePos = { x: 0, y: 0 };
   const mouseVel = { x: 0, y: 0 };
   // Seconds since the last real pointer input, used to fade between
-  // following the pointer and the idle orbit.
+  // following the pointer and the idle orbit. frameTime is written once
+  // per frame and is the only clock reading anything outside frame() may
+  // use (see setTargetFromPoint).
+  let frameTime = 0;
   let lastPointAt = -999;
   // Briefly boosted by a tap so a single touch reads as a hit rather than
   // as nothing happening.
@@ -262,7 +331,10 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
   function setTargetFromPoint(clientX, clientY) {
     pointerTarget.x = ((clientX / window.innerWidth) * 2 - 1) * mouseScale.x;
     pointerTarget.y = -((clientY / window.innerHeight) * 2 - 1) * mouseScale.y;
-    lastPointAt = clock ? clock.getElapsedTime() : 0;
+    // Deliberately NOT clock.getElapsedTime(): that calls getDelta()
+    // internally and would steal the frame loop's delta, which collapses
+    // dt toward zero on every pointer move and makes the spring crawl.
+    lastPointAt = frameTime;
   }
   window.addEventListener("mousemove", (e) => setTargetFromPoint(e.clientX, e.clientY));
   window.addEventListener(
@@ -335,7 +407,8 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     currentTilt += (targetTilt - currentTilt) * 0.04;
     currentAmplitude += (targetAmplitude - currentAmplitude) * 0.04;
 
-    const elapsedNow = clock.getElapsedTime();
+    const elapsedNow = clock.elapsedTime;
+    frameTime = elapsedNow;
 
     // Blend from "follow the pointer" to "wander on its own" over the two
     // seconds after input stops. On a phone there is no cursor, so this is
@@ -365,19 +438,35 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     // Locked to the grid's own drift so the towers never slide across it.
     skyline.position.y = driftY;
 
-    // Towers rise with scroll progress, each on its own threshold.
+    // Towers rise with scroll progress, each on its own threshold, and
+    // counter-rotate as they go: the plane they stand on ends up steeply
+    // tilted, and a city leaning with it looks like it's falling over.
+    // At progress 1 the correction cancels the tilt exactly, so the
+    // towers are dead vertical by the bottom of the page.
+    const standUp = progress * (-Math.PI / 2 - currentTilt);
+    // Deliberately below the grid's own brightness: the skyline is depth,
+    // not a foreground element, and page copy has to win over it.
+    const skylineOpacity = Math.min(isCompact ? 0.34 : 0.5, opacity * 0.95);
+    const rippleX = uniforms.uMouse.value.x;
+    const rippleY = uniforms.uMouse.value.y;
+
     for (const b of buildings) {
       const t = Math.min(1, Math.max(0, (progress - b.riseStart) / b.riseSpan));
       const eased = t * t * (3 - 2 * t);
       const h = eased * b.height;
       b.obj.visible = h > 0.012;
-      if (b.obj.visible) b.obj.scale.set(b.footprintX, b.footprintY, h);
+      if (!b.obj.visible) continue;
+
+      // Same falloff shape as the ripple in the vertex shader, so a tower
+      // lights up exactly where the surface under it is being pushed.
+      const dx = b.obj.position.x - rippleX;
+      const dy = b.obj.position.y - rippleY;
+      const near = Math.exp(-(dx * dx + dy * dy) * 0.11);
+
+      b.obj.scale.set(b.footprintX, b.footprintY, h * (1 + near * 0.14));
+      b.obj.rotation.x = standUp;
+      b.obj.material.opacity = Math.min(0.95, skylineOpacity * (1 + near * 2.1));
     }
-    // Kept a little brighter than the grid so they read as structures
-    // standing on it rather than as more of the same mesh.
-    // Deliberately below the grid's own brightness: the skyline is depth,
-    // not a foreground element, and page copy has to win over it.
-    skylineMaterial.opacity = Math.min(isCompact ? 0.34 : 0.5, opacity * 0.95);
 
     scene.rotation.x = currentTilt;
     uniforms.uTime.value = elapsed;
