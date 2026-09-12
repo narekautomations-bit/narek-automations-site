@@ -3,12 +3,9 @@
 Plain static HTML/CSS/JS, no build step, no framework. Open `index.html` via a
 local server (not `file://` — see below) to preview.
 
-## Before launch: swap the placeholders
-
-Everything below lives in [`js/config.js`](js/config.js):
-
-- `CONTACT_EMAIL` / `CONTACT_PHONE` — currently placeholders, used across the
-  nav CTA, contact section, and footer.
+**Live site:** https://narek-automations.netlify.app
+Deploys automatically on every push to `master` (Netlify is connected to
+this GitHub repo via the Netlify GitHub App).
 
 ## Local preview
 
@@ -20,15 +17,22 @@ python -m http.server 8000
 # then open http://localhost:8000
 ```
 
-## Deploying (Netlify)
+## Contact info
 
-1. Push this folder to a GitHub repo, or drag-and-drop the folder into
-   Netlify's dashboard for an instant deploy.
-2. No build command needed — publish directory is the project root.
-3. The contact form already has `data-netlify="true"` — Netlify Forms picks
-   it up automatically on deploy. Submissions show up in
-   **Site settings → Forms** in the Netlify dashboard. Turn on email
-   notifications there if you want each submission emailed to you directly.
+Lives in [`js/config.js`](js/config.js) as `CONTACT_EMAIL` / `CONTACT_PHONE`,
+used across the nav CTA, contact section, and footer. Update there if either
+changes.
+
+## Netlify setup (already configured)
+
+- **Forms**: the contact form has `data-netlify="true"` — Netlify Forms picks
+  it up automatically on deploy. Submissions appear in
+  **Forms** in the Netlify dashboard, and also get emailed to
+  `narekautomations@gmail.com` automatically (configured via a Netlify
+  notification hook).
+- **Continuous deployment**: connected to
+  `narekautomations-bit/narek-automations-site` on `master`. No build command
+  needed — publish directory is the project root.
 
 ## Adding a real backend later (optional)
 
@@ -50,9 +54,10 @@ code change required, no rewrite:
 - `css/base.css`, `layout.css`, `components.css`, `animations.css`
 - `js/config.js` — contact info + backend seams (start here)
 - `js/main.js` — wires up every module on page load
-- `js/motion.js` — GSAP scroll reveals + hero formula-bar typewriter
-- `js/roi-calculator.js`, `before-after-demo.js`, `chat-widget.js`,
-  `chat-data.js`, `contact-form.js`, `faq-accordion.js` — the interactive
-  features, one file each
-
-<!-- deploy test -->
+- `js/smooth-scroll.js` — native smooth-scroll anchor navigation
+- `js/motion.js` — GSAP scroll reveals, hero formula-bar typewriter, parallax
+- `js/kinetic-text.js` — hero headline word-cascade (SplitText)
+- `js/magnetic.js` — magnetic pull on primary buttons
+- `js/hero-webgl.js` — animated cursor/touch-reactive grid in the hero
+- `js/chat-widget.js`, `chat-data.js` — the scripted FAQ chat assistant
+- `js/contact-form.js`, `faq-accordion.js` — remaining interactive features
