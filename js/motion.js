@@ -1,57 +1,3 @@
-const FORMULAS = [
-  '=AUTOMATE(A2:A500, "reconcile_statements")',
-  '=GENERATE_PDF(Invoices, "engagement_letters")',
-  '=CONSOLIDATE(Jan:Dec, "month_end_close")',
-  '=FLAG_EXCEPTIONS(Ledger, tolerance=0.01)',
-];
-
-function initTypewriter() {
-  const el = document.getElementById("formula-typewriter");
-  if (!el) return;
-
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduceMotion) {
-    el.textContent = FORMULAS[0];
-    return;
-  }
-
-  let formulaIndex = 0;
-  let charIndex = 0;
-  let deleting = false;
-
-  el.setAttribute("data-typing", "true");
-  const cursor = document.createElement("span");
-  cursor.className = "formula-bar__cursor";
-  el.after(cursor);
-
-  function tick() {
-    const current = FORMULAS[formulaIndex];
-
-    if (!deleting) {
-      charIndex++;
-      el.textContent = current.slice(0, charIndex);
-      if (charIndex === current.length) {
-        deleting = true;
-        setTimeout(tick, 1800);
-        return;
-      }
-      setTimeout(tick, 38);
-    } else {
-      charIndex--;
-      el.textContent = current.slice(0, charIndex);
-      if (charIndex === 0) {
-        deleting = false;
-        formulaIndex = (formulaIndex + 1) % FORMULAS.length;
-        setTimeout(tick, 400);
-        return;
-      }
-      setTimeout(tick, 18);
-    }
-  }
-
-  tick();
-}
-
 function initReveals() {
   gsap.registerPlugin(ScrollTrigger);
 
@@ -114,7 +60,6 @@ function initReveals() {
 export function initMotion() {
   document.body.classList.remove("no-js");
   document.body.classList.add("js-ready");
-  initTypewriter();
 
   if (typeof gsap !== "undefined" && typeof ScrollTrigger !== "undefined") {
     initReveals();

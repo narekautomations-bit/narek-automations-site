@@ -46,7 +46,7 @@ html.webgl-grid-active .tone-dark .section-head h2,
 html.webgl-grid-active .tone-dark .section-head p,
 html.webgl-grid-active .tone-dark .eyebrow,
 html.webgl-grid-active .hero h1,
-html.webgl-grid-active .hero__lede,
+html.webgl-grid-active .run-flow-head h3,
 html.webgl-grid-active .badge {
   text-shadow: 0 0 20px rgba(11, 18, 32, 0.95), 0 0 9px rgba(11, 18, 32, 0.95), 0 0 3px rgba(11, 18, 32, 0.95);
 }
@@ -57,14 +57,6 @@ html.webgl-grid-active .badge {
    that holds up either way. */
 html.webgl-grid-active .footer__inner {
   text-shadow: 0 0 20px rgba(11, 18, 32, 0.9), 0 0 9px rgba(11, 18, 32, 0.9), 0 0 16px rgba(248, 249, 251, 0.5);
-}
-
-/* The formula bar and confidentiality card are opaque panels already —
-   just needs slightly more separation from the grid immediately behind
-   its own edges. */
-html.webgl-grid-active .formula-bar,
-html.webgl-grid-active .confidentiality-badge {
-  box-shadow: var(--shadow-raised), 0 0 0 1px rgba(11, 18, 32, 0.4);
 }
 
 .eyebrow {

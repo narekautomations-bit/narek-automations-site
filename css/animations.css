@@ -22,10 +22,6 @@
   }
 }
 
-.formula-bar__text[data-typing="true"] {
-  border-right: none;
-}
-
 @keyframes float-y {
   0%,
   100% {

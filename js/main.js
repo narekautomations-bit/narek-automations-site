@@ -6,7 +6,6 @@ import { initMagneticButtons } from "./magnetic.js";
 import { initPageGrid } from "./interactive-grid.js";
 import { initMatrixRain } from "./matrix-rain.js";
 import { initProcessDiagram } from "./process-diagram.js";
-import { initChatWidget } from "./chat-widget.js";
 import { initContactForm } from "./contact-form.js";
 import { initFaqAccordion } from "./faq-accordion.js";
 
@@ -50,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initPageGrid();
   initMatrixRain();
   initProcessDiagram();
-  initChatWidget();
   initContactForm();
   initFaqAccordion();
 });

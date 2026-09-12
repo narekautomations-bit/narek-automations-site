@@ -38,14 +38,9 @@ changes.
 
 ## Adding a real backend later (optional)
 
-Both seams live in `js/config.js` as `null` — flipping either on is the only
-code change required, no rewrite:
+The seam lives in `js/config.js` as `null` — flipping it on is the only code
+change required, no rewrite:
 
-- **Chat widget** (`CHAT_BACKEND_URL`): add a Netlify Function (e.g.
-  `netlify/functions/chat.js`) that proxies to an LLM API, store the API key
-  as a Netlify environment variable (never commit it), then set
-  `CHAT_BACKEND_URL = "/.netlify/functions/chat"`. `js/chat-widget.js`
-  already calls this URL with `{ message }` and expects `{ reply }` back.
 - **Contact form** (`FORM_BACKEND_URL`): only needed if you move off Netlify
   Forms — e.g. to a CRM. Netlify Forms works out of the box otherwise.
 
@@ -54,12 +49,13 @@ code change required, no rewrite:
 - `index.html` — all page content/copy
 - `css/tokens.css` — colors, type, spacing, motion (the design system)
 - `css/base.css`, `layout.css`, `components.css`, `animations.css`
-- `js/config.js` — contact info + backend seams (start here)
+- `js/config.js` — contact info + backend seam (start here)
 - `js/main.js` — wires up every module on page load
 - `js/smooth-scroll.js` — native smooth-scroll anchor navigation
-- `js/motion.js` — GSAP scroll reveals, hero formula-bar typewriter, parallax
+- `js/motion.js` — GSAP scroll reveals and parallax
 - `js/kinetic-text.js` — hero headline word-cascade (SplitText)
 - `js/magnetic.js` — magnetic pull on primary buttons
-- `js/hero-webgl.js` — animated cursor/touch-reactive grid in the hero
-- `js/chat-widget.js`, `chat-data.js` — the scripted FAQ chat assistant
+- `js/interactive-grid.js` — page-wide cursor/touch-reactive WebGL grid
+- `js/matrix-rain.js` — builds the hero's ambient log-rain markup (CSS animates it)
+- `js/process-diagram.js` — scroll trigger for the run-flow diagram
 - `js/contact-form.js`, `faq-accordion.js` — remaining interactive features

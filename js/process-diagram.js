@@ -1,7 +1,7 @@
 // Scroll-triggered reveal for the "what one run looks like" flow diagram.
 //
-// The diagram itself is static HTML + inline SVG (see #run-flow in
-// index.html) so it's real text for search engines and screen readers, and
+// The diagram itself is static HTML nodes over one inline SVG of wires
+// (see #run-flow in index.html) so it's real text for search engines and screen readers, and
 // it renders fine with no JS at all. All this module does is add one class
 // when the diagram scrolls into view; CSS owns every transition, the
 // connector line-draw, and the idle animations.
