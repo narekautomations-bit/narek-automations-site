@@ -68,7 +68,14 @@ export function initContactForm() {
     submitBtn.textContent = "Sending…";
 
     try {
-      const response = await fetch(window.location.pathname, {
+      // Post to an absolute https:// URL, not a relative path. If a visitor
+      // ever lands on a plain http:// URL, a relative-path fetch would
+      // submit over http and get caught in Netlify's http->https redirect
+      // mid-request, which browsers treat as a cross-origin hop — the
+      // fetch throws (even though Netlify still records the submission),
+      // showing a false "something went wrong" error.
+      const submitUrl = `https://${window.location.host}${window.location.pathname}`;
+      const response = await fetch(submitUrl, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: encodeForm(form),

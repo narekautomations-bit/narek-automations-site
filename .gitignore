@@ -6,3 +6,6 @@ node_modules/
 # Claude Code skill data vendored for authoring only — not part of the
 # shipped site (see README.md).
 .claude/
+
+# Local Netlify folder
+.netlify

@@ -148,11 +148,12 @@
   transition: opacity 0.4s var(--ease-out);
 }
 
-.hero__bg-grid[data-webgl-active="true"] {
+.hero__bg-grid[data-webgl-active="true"],
+.section-grid-bg[data-webgl-active="true"] {
   opacity: 0;
 }
 
-.hero__webgl-canvas {
+.section-webgl-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -206,6 +207,39 @@
   flex-wrap: wrap;
   gap: var(--space-sm);
   margin: var(--space-sm) 0;
+}
+
+/* Mobile: the tight rhythm above exists to fit the hero within one desktop
+   viewport. That constraint doesn't apply on mobile (scrolling is normal
+   there), and the tightness reads as cramped on a small screen, so loosen
+   it back up and let the hero size to its content instead of forcing it
+   to fill the screen exactly. */
+@media (max-width: 640px) {
+  .hero {
+    min-height: 0;
+    padding-top: calc(56px + var(--space-lg));
+    padding-bottom: var(--space-xl);
+  }
+
+  .hero h1 {
+    margin-bottom: var(--space-sm);
+  }
+
+  .hero__lede {
+    margin-bottom: var(--space-md);
+  }
+
+  .hero__actions {
+    margin: var(--space-md) 0;
+  }
+
+  .badge-row {
+    gap: var(--space-xs);
+  }
+
+  .hero__col-right {
+    margin-top: var(--space-lg);
+  }
 }
 
 /* ---- Formula bar mock ---- */
@@ -464,6 +498,7 @@
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 70% 65% at 50% 0%, #000 25%, transparent 85%);
   pointer-events: none;
+  transition: opacity 0.4s var(--ease-out);
 }
 
 .process-steps {
