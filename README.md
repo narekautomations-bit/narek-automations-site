@@ -54,3 +54,5 @@ code change required, no rewrite:
 - `js/roi-calculator.js`, `before-after-demo.js`, `chat-widget.js`,
   `chat-data.js`, `contact-form.js`, `faq-accordion.js` — the interactive
   features, one file each
+
+<!-- deploy test -->
