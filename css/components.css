@@ -401,7 +401,7 @@
 .steps__item p {
   font-size: var(--text-sm);
   line-height: 1.6;
-  color: #cfd8e6;
+  color: #e0e7f1;
   max-width: 24ch;
   margin: 0;
 }
@@ -1360,7 +1360,7 @@
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.05);
   background: #0f1829;
-  color: #d4dcea;
+  color: #dfe6f0;
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   line-height: 1.45;

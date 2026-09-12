@@ -73,22 +73,56 @@ const FRAGMENT_SHADER = `
 // ---------------------------------------------------------------------
 // Towers
 // ---------------------------------------------------------------------
-// Built in unit space: the plan sits inside x/y of [-0.5, 0.5] and the
-// profile runs from z = 0 upward, so scaling z grows a tower out of the
-// plane with its base staying put.
+// A tower is a composition of masses, not one extrusion. That's the whole
+// difference between a skyline and a bar chart: real towers are
+// assemblies — a shaft with a low wing, two interlocking volumes of
+// different heights, a slab with a slender tower rising off one end, a
+// block cantilevered out partway up.
 //
-// Every tower is generated from two independent pieces — a plan (the
-// floorplate outline) and a profile (how the footprint scales on the way
-// up) — which is what produces variety instead of 26 shoeboxes. Setbacks,
-// continuous taper, podiums and crowns are all just shapes of the same
-// profile, so they all fall out of one loop.
+// Each mass is built from two independent pieces. A plan is its
+// floorplate outline: square, chamfered, cruciform, softened at the
+// corners, or fully round. A profile is how its footprint scales with
+// height, which is where setbacks, taper, street-level podiums and crowns
+// all come from. Everything is unit space — plan inside x/y of
+// [-0.5, 0.5], profile z upward from 0 — so scaling z grows the whole
+// tower out of the plane with its base staying put.
 
-// Floorplate outline, as points around the perimeter.
 function towerPlan(rand) {
-  const kind = rand();
-  if (kind < 0.3) {
-    // Chamfered corners: the single cheapest thing that stops a tower
-    // reading as a shoebox.
+  const k = rand();
+
+  // Cylinder, with enough sides that the silhouette reads as a curve
+  // rather than a polygon.
+  if (k < 0.17) {
+    const n = 20 + Math.floor(rand() * 10);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      out.push([Math.cos(a) * 0.5, Math.sin(a) * 0.5]);
+    }
+    return out;
+  }
+
+  // Rounded rectangle: flat faces, softened corners.
+  if (k < 0.33) {
+    const r = 0.14 + rand() * 0.16;
+    const arcs = [
+      [0.5 - r, 0.5 - r, 0],
+      [-0.5 + r, 0.5 - r, Math.PI / 2],
+      [-0.5 + r, -0.5 + r, Math.PI],
+      [0.5 - r, -0.5 + r, -Math.PI / 2],
+    ];
+    const out = [];
+    for (const [cx, cy, a0] of arcs) {
+      for (let i = 0; i <= 4; i++) {
+        const a = a0 + (i / 4) * (Math.PI / 2);
+        out.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+      }
+    }
+    return out;
+  }
+
+  // Chamfered corners.
+  if (k < 0.56) {
     const c = 0.13 + rand() * 0.14;
     return [
       [-0.5 + c, -0.5],
@@ -101,9 +135,10 @@ function towerPlan(rand) {
       [-0.5, -0.5 + c],
     ];
   }
-  if (kind < 0.46) {
-    // Cruciform — a real high-rise floorplate, and in wireframe it reads
-    // completely differently from a box.
+
+  // Cruciform — a real high-rise floorplate, and in wireframe it reads
+  // completely differently from a box.
+  if (k < 0.7) {
     const a = 0.15 + rand() * 0.11;
     return [
       [-a, -0.5],
@@ -120,6 +155,7 @@ function towerPlan(rand) {
       [-a, -a],
     ];
   }
+
   return [
     [-0.5, -0.5],
     [0.5, -0.5],
@@ -128,127 +164,218 @@ function towerPlan(rand) {
   ];
 }
 
-// Footprint scale as a function of height, as {z, s} control points. Two
-// entries sharing a z is a setback — the ledge between them.
-function towerProfile(rand) {
+// Footprint scale against height, as {z, s} control points. Two entries
+// sharing a z is a setback — the ledge between them.
+function massProfile(rand, baseZ, topZ) {
+  const span = topZ - baseZ;
   const p = [];
-  let z = 0;
+  let z = baseZ;
 
-  // Podium: a wider block of low floors at street level.
-  if (rand() < 0.42) {
-    const h = 0.05 + rand() * 0.07;
-    const ps = 1.18 + rand() * 0.3;
-    p.push({ z: 0, s: ps }, { z: h, s: ps }, { z: h, s: 1 });
+  // Podium: a wider block of low floors, only where the mass starts on
+  // the ground.
+  if (baseZ === 0 && rand() < 0.4) {
+    const h = baseZ + span * (0.05 + rand() * 0.07);
+    const ps = 1.16 + rand() * 0.3;
+    p.push({ z: baseZ, s: ps }, { z: h, s: ps }, { z: h, s: 1 });
     z = h;
   } else {
-    p.push({ z: 0, s: 1 });
+    p.push({ z: baseZ, s: 1 });
   }
 
   const style = rand();
-  if (style < 0.26) {
+  if (style < 0.24) {
     // Tapered shaft, narrowing the whole way up.
-    p.push({ z: 1, s: 0.6 + rand() * 0.26 });
-  } else if (style < 0.52) {
+    p.push({ z: topZ, s: 0.58 + rand() * 0.28 });
+  } else if (style < 0.5) {
     // Flat-topped slab with a slight batter.
-    p.push({ z: 1, s: 0.9 + rand() * 0.1 });
-  } else if (style < 0.8) {
+    p.push({ z: topZ, s: 0.9 + rand() * 0.1 });
+  } else if (style < 0.79) {
     // One setback, then a slimmer upper shaft.
-    const zb = z + (1 - z) * (0.44 + rand() * 0.26);
+    const zb = z + (topZ - z) * (0.44 + rand() * 0.26);
     p.push({ z: zb, s: 0.95 });
-    const upper = 0.6 + rand() * 0.18;
-    p.push({ z: zb, s: upper }, { z: 1, s: upper * (0.88 + rand() * 0.12) });
+    const upper = 0.58 + rand() * 0.2;
+    p.push({ z: zb, s: upper }, { z: topZ, s: upper * (0.88 + rand() * 0.12) });
   } else {
     // Ziggurat: Art Deco stepping, two or three setbacks.
     const steps = 2 + Math.floor(rand() * 2);
     let cur = 1;
     let zc = z;
     for (let i = 0; i < steps; i++) {
-      const zn = Math.min(0.94, zc + ((1 - zc) / (steps - i)) * (0.65 + rand() * 0.4));
+      const zn = Math.min(baseZ + span * 0.94, zc + ((topZ - zc) / (steps - i)) * (0.65 + rand() * 0.4));
       p.push({ z: zn, s: cur });
       cur *= 0.58 + rand() * 0.22;
       p.push({ z: zn, s: cur });
       zc = zn;
     }
-    p.push({ z: 1, s: cur });
+    p.push({ z: topZ, s: cur });
   }
 
-  // Crown: either a pyramid cap or a projecting slab roof.
+  // Crown: a pyramid cap, or a slab roof that projects past the shaft.
   const crown = rand();
   const topS = p[p.length - 1].s;
-  if (crown < 0.3) {
-    p.push({ z: 1 + 0.05 + rand() * 0.11, s: topS * (0.08 + rand() * 0.22) });
-  } else if (crown < 0.46) {
-    p.push({ z: 1.03, s: topS * 1.14 }, { z: 1.06, s: topS * 1.14 });
+  if (crown < 0.28) {
+    p.push({ z: topZ + span * (0.05 + rand() * 0.12), s: topS * (0.08 + rand() * 0.22) });
+  } else if (crown < 0.44) {
+    p.push({ z: topZ + span * 0.03, s: topS * 1.14 }, { z: topZ + span * 0.06, s: topS * 1.14 });
   }
   return p;
+}
+
+// The masses that make up one tower, each with its own plan, profile,
+// footprint and offset from the tower's centre.
+function composeMasses(rand) {
+  const mass = (topZ, ox, oy, sx, sy, baseZ) => ({
+    plan: towerPlan(rand),
+    profile: massProfile(rand, baseZ || 0, topZ),
+    ox,
+    oy,
+    sx,
+    sy,
+  });
+
+  const kind = rand();
+
+  if (kind < 0.3) {
+    return [mass(1, 0, 0, 1, 1)];
+  }
+
+  if (kind < 0.56) {
+    // Interlocking volumes at different heights, overlapping enough to
+    // read as one building rather than as neighbours.
+    const out = [mass(1, 0, 0, 0.72 + rand() * 0.2, 0.72 + rand() * 0.2)];
+    const extra = 1 + Math.floor(rand() * 2);
+    for (let i = 0; i < extra; i++) {
+      const a = rand() * Math.PI * 2;
+      const r = 0.28 + rand() * 0.2;
+      const w = 0.4 + rand() * 0.26;
+      out.push(mass(0.3 + rand() * 0.45, Math.cos(a) * r, Math.sin(a) * r, w, w));
+    }
+    return out;
+  }
+
+  if (kind < 0.78) {
+    // Horizontal slab with a slender tower off one end: the vertical
+    // reads against the horizontal instead of standing on its own.
+    const side = rand() < 0.5 ? -1 : 1;
+    return [
+      mass(0.28 + rand() * 0.22, -side * 0.2, 0, 0.95, 0.6 + rand() * 0.2),
+      mass(1, side * 0.22, 0, 0.42 + rand() * 0.18, 0.5 + rand() * 0.22),
+    ];
+  }
+
+  // Shaft with a mass cantilevered out partway up.
+  const a = rand() * Math.PI * 2;
+  const zb = 0.4 + rand() * 0.3;
+  return [
+    mass(1, 0, 0, 0.58 + rand() * 0.2, 0.58 + rand() * 0.2),
+    mass(
+      zb + 0.12 + rand() * 0.12,
+      Math.cos(a) * 0.36,
+      Math.sin(a) * 0.36,
+      0.48 + rand() * 0.2,
+      0.32 + rand() * 0.18,
+      zb
+    ),
+  ];
 }
 
 function towerGeometry(THREE, rand, worldHeight) {
   const pts = [];
   const seg = (x1, y1, z1, x2, y2, z2) => pts.push(x1, y1, z1, x2, y2, z2);
+  const masses = composeMasses(rand);
+  let highest = 0;
 
-  const plan = towerPlan(rand);
-  const profile = towerProfile(rand);
-  const topZ = profile[profile.length - 1].z;
+  for (const m of masses) {
+    const { plan, profile, ox, oy, sx, sy } = m;
+    const baseZ = profile[0].z;
+    const topZ = profile[profile.length - 1].z;
+    highest = Math.max(highest, topZ);
 
-  // Extra points along each plan edge. These are the facade mullions, and
-  // they carry most of the density that makes a wireframe tower look like
-  // a building rather than a crate.
-  const perEdge = plan.length > 8 ? 1 : 2 + Math.floor(rand() * 3);
-  const outline = [];
-  for (let i = 0; i < plan.length; i++) {
-    const [x1, y1] = plan[i];
-    const [x2, y2] = plan[(i + 1) % plan.length];
-    for (let k = 0; k < perEdge; k++) {
-      const t = k / perEdge;
-      outline.push([x1 + (x2 - x1) * t, y1 + (y2 - y1) * t]);
-    }
-  }
+    // Map a plan point through the mass's own footprint and offset.
+    const px = (x, s) => ox + x * s * sx;
+    const py = (y, s) => oy + y * s * sy;
 
-  // Each mullion is one polyline through the whole profile, so a taper
-  // slants it, a setback puts a ledge in it, and a crown closes it.
-  for (const [px, py] of outline) {
-    for (let i = 1; i < profile.length; i++) {
-      const a = profile[i - 1];
-      const b = profile[i];
-      seg(px * a.s, py * a.s, a.z, px * b.s, py * b.s, b.z);
-    }
-  }
-
-  const scaleAt = (z) => {
-    for (let i = 1; i < profile.length; i++) {
-      const a = profile[i - 1];
-      const b = profile[i];
-      if (z <= b.z) {
-        const span = b.z - a.z;
-        return span < 1e-6 ? b.s : a.s + (b.s - a.s) * ((z - a.z) / span);
-      }
-    }
-    return profile[profile.length - 1].s;
-  };
-
-  const ring = (z, sc) => {
+    // Two facade treatments. A curtain wall is a run of vertical
+    // mullions; a diagrid is exposed X-bracing between floor bands, which
+    // is the other thing that reads unmistakably as structure rather than
+    // as a drawn box.
+    const diagrid = rand() < 0.28;
+    const perEdge = diagrid ? 1 : plan.length > 12 ? 1 : 2 + Math.floor(rand() * 2);
+    const outline = [];
     for (let i = 0; i < plan.length; i++) {
       const [x1, y1] = plan[i];
       const [x2, y2] = plan[(i + 1) % plan.length];
-      seg(x1 * sc, y1 * sc, z, x2 * sc, y2 * sc, z);
+      for (let k = 0; k < perEdge; k++) {
+        const t = k / perEdge;
+        outline.push([x1 + (x2 - x1) * t, y1 + (y2 - y1) * t]);
+      }
     }
-  };
 
-  // Floors at a constant world spacing, so floor count still reads as
-  // height across the whole skyline.
-  const floorSpacing = 0.135;
-  const floors = Math.max(3, Math.round((worldHeight * topZ) / floorSpacing));
-  for (let f = 0; f <= floors; f++) {
-    const z = (topZ * f) / floors;
-    ring(z, scaleAt(z));
+    // One polyline per mullion through the whole profile, so a taper
+    // slants it, a setback puts a ledge in it and a crown closes it.
+    for (const [ox0, oy0] of outline) {
+      for (let i = 1; i < profile.length; i++) {
+        const a = profile[i - 1];
+        const b = profile[i];
+        seg(px(ox0, a.s), py(oy0, a.s), a.z, px(ox0, b.s), py(oy0, b.s), b.z);
+      }
+    }
+
+    const scaleAt = (z) => {
+      for (let i = 1; i < profile.length; i++) {
+        const a = profile[i - 1];
+        const b = profile[i];
+        if (z <= b.z) {
+          const gap = b.z - a.z;
+          return gap < 1e-6 ? b.s : a.s + (b.s - a.s) * ((z - a.z) / gap);
+        }
+      }
+      return profile[profile.length - 1].s;
+    };
+
+    const ring = (z, sc) => {
+      for (let i = 0; i < plan.length; i++) {
+        const [x1, y1] = plan[i];
+        const [x2, y2] = plan[(i + 1) % plan.length];
+        seg(px(x1, sc), py(y1, sc), z, px(x2, sc), py(y2, sc), z);
+      }
+    };
+
+    // Floors at a constant world spacing, so floor count still reads as
+    // height. Round plans get them sparser — each ring costs 20-30
+    // segments there instead of four.
+    const spacing = 0.135 * (plan.length > 12 ? 2.2 : 1);
+    const span = topZ - baseZ;
+    const floors = Math.max(2, Math.min(26, Math.round((worldHeight * span) / spacing)));
+    for (let f = 0; f <= floors; f++) {
+      const z = baseZ + (span * f) / floors;
+      ring(z, scaleAt(z));
+    }
+
+    if (diagrid) {
+      // Brace every few floors rather than every one — the point is a
+      // structural rhythm, not a mesh.
+      const band = Math.max(2, Math.round(floors / 5));
+      for (let f = 0; f + band <= floors; f += band) {
+        const z0 = baseZ + (span * f) / floors;
+        const z1 = baseZ + (span * (f + band)) / floors;
+        const s0 = scaleAt(z0);
+        const s1 = scaleAt(z1);
+        for (let i = 0; i < plan.length; i++) {
+          const [x1, y1] = plan[i];
+          const [x2, y2] = plan[(i + 1) % plan.length];
+          seg(px(x1, s0), py(y1, s0), z0, px(x2, s1), py(y2, s1), z1);
+          seg(px(x2, s0), py(y2, s0), z0, px(x1, s1), py(y1, s1), z1);
+        }
+      }
+    }
+    // Both sides of every setback ledge, which the floor rings can't draw
+    // because two of them share a z.
+    for (const pt of profile) ring(pt.z, pt.s);
   }
-  // Both sides of every setback ledge, which the floor rings can't draw
-  // because two of them share a z.
-  for (const pt of profile) ring(pt.z, pt.s);
 
   if (rand() < 0.34) {
-    seg(0, 0, topZ, 0, 0, topZ + 0.08 + rand() * 0.2);
+    seg(0, 0, highest, 0, 0, highest + 0.08 + rand() * 0.2);
   }
 
   const geometry = new THREE.BufferGeometry();
@@ -484,6 +611,10 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
 
   let opacity = 0;
   let darkness = 1;
+  // The skyline follows an eased copy of scroll progress rather than the
+  // raw value, so the city grows into place instead of snapping tower
+  // heights to whatever the scrollbar is doing this frame.
+  let skylineProgress = 0;
   let currentTilt = -0.4;
   let currentAmplitude = 0.3;
 
@@ -548,15 +679,16 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     // tilted, and a city leaning with it looks like it's falling over.
     // At progress 1 the correction cancels the tilt exactly, so the
     // towers are dead vertical by the bottom of the page.
-    const standUp = progress * (-Math.PI / 2 - currentTilt);
+    skylineProgress += (progress - skylineProgress) * 0.05;
+    const standUp = skylineProgress * (-Math.PI / 2 - currentTilt);
     // Deliberately below the grid's own brightness: the skyline is depth,
     // not a foreground element, and page copy has to win over it.
-    const skylineOpacity = Math.min(isCompact ? 0.3 : 0.44, opacity * 0.95);
+    const skylineOpacity = Math.min(isCompact ? 0.34 : 0.52, opacity * 1.15);
     const rippleX = uniforms.uMouse.value.x;
     const rippleY = uniforms.uMouse.value.y;
 
     for (const b of buildings) {
-      const t = Math.min(1, Math.max(0, (progress - b.riseStart) / b.riseSpan));
+      const t = Math.min(1, Math.max(0, (skylineProgress - b.riseStart) / b.riseSpan));
       const eased = t * t * (3 - 2 * t);
       const h = eased * b.height;
       b.obj.visible = h > 0.012;

@@ -18,7 +18,7 @@
      measured fine against flat ink and still disappeared on the page. */
   --color-ink-line: rgba(255, 255, 255, 0.16);
   --color-ink-text: #f7f9fc;
-  --color-ink-text-muted: #bcc7d8;
+  --color-ink-text-muted: #c9d3e1;
 
   /* ---- Color: paper (light) ---- */
   --color-paper: #f8f9fb;

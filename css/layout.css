@@ -9,6 +9,75 @@ section {
   position: relative;
 }
 
+/* Section divider. A hairline that fades out well before the viewport
+   edges, with a single node sitting on it — enough to say "new section"
+   without cutting across the grid, which a full-width border does. */
+.section-rule {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(95, 224, 160, 0.16) 16%,
+    rgba(95, 224, 160, 0.42) 50%,
+    rgba(95, 224, 160, 0.16) 84%,
+    transparent
+  );
+}
+
+.section-rule::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -4px 0 0 -4px;
+  transform: rotate(45deg);
+  background: var(--color-ink);
+  border: 1px solid rgba(95, 224, 160, 0.6);
+}
+
+/* Used between the two blocks inside How It Works rather than between
+   sections, so it sits in normal flow. */
+.section-rule--inner {
+  position: relative;
+  display: block;
+  margin-top: var(--space-md);
+}
+
+/* Content scrim. Every section sits over a live grid, a scrolling log
+   layer and a wireframe skyline; a soft dark wash under the middle of
+   the frame lifts the copy clear of all of it while leaving the edges —
+   where the effect actually reads — untouched. Preserves the continuous
+   background because it has no edges of its own. */
+main > section:not(.hero)::before,
+footer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 74% 62% at 50% 50%,
+    rgba(7, 12, 21, 0.82) 0%,
+    rgba(7, 12, 21, 0.62) 42%,
+    rgba(7, 12, 21, 0.28) 72%,
+    rgba(7, 12, 21, 0) 100%
+  );
+}
+
+main > section > .container,
+footer > .container {
+  position: relative;
+  z-index: 1;
+}
+
 .section-pad {
   padding-block: var(--space-md);
 }
