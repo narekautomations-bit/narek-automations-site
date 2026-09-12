@@ -27,10 +27,17 @@ const VERTEX_SHADER = `
   varying float vElevation;
   void main() {
     vec3 pos = position;
-    float wave = (sin(pos.x * 0.8 + uTime * 0.35) * 0.07 + sin(pos.y * 1.05 - uTime * 0.28) * 0.06) * uAmplitude;
+    // Very subtle ambient life — just enough that the mesh doesn't look
+    // frozen — so the cursor/touch response is unmistakably the dominant
+    // motion instead of competing with a full-sheet wave.
+    float wave = (sin(pos.x * 0.6 + uTime * 0.25) * 0.025 + sin(pos.y * 0.8 - uTime * 0.2) * 0.02) * uAmplitude;
+    // A smooth, tightly-localized bump that tracks the cursor/touch
+    // directly — like pressing into fabric right where your finger is —
+    // rather than a radiating ripple, which read as moving the whole
+    // sheet regardless of where you touched.
     float dist = distance(pos.xy, uMouse);
-    float ripple = sin(dist * 1.7 - uTime * 1.7) * exp(-dist * 0.55) * 0.4 * (0.6 + uAmplitude * 0.4) * uRippleBoost;
-    pos.z += wave + ripple;
+    float bump = exp(-dist * dist * 1.1) * 0.85 * uRippleBoost;
+    pos.z += wave + bump;
     vElevation = pos.z;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
@@ -178,14 +185,14 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     // treatment, light sections stay clearly present too (not a whisper),
     // with heading text protected by a halo (components.css) instead of
     // by hiding the grid behind it.
-    const targetOpacity = dark ? 0.6 : 0.5;
+    const targetOpacity = dark ? 0.65 : 0.6;
 
     opacity += (targetOpacity - opacity) * 0.06;
     darkness += ((dark ? 1 : 0) - darkness) * 0.06;
     currentTilt += (targetTilt - currentTilt) * 0.04;
     currentAmplitude += (targetAmplitude - currentAmplitude) * 0.04;
 
-    const lerp = isCompact ? 0.24 : 0.1;
+    const lerp = isCompact ? 0.28 : 0.16;
     mouseSmooth.x += (mouseTarget.x - mouseSmooth.x) * lerp;
     mouseSmooth.y += (mouseTarget.y - mouseSmooth.y) * lerp;
 

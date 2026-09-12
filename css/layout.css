@@ -39,7 +39,7 @@ html.webgl-grid-active .tone-light .section-head p,
 html.webgl-grid-active .tone-light .eyebrow,
 html.webgl-grid-active .tone-light .contact > .reveal > h2,
 html.webgl-grid-active .tone-light .contact > .reveal > p {
-  text-shadow: 0 0 14px rgba(248, 249, 251, 0.95), 0 0 4px rgba(248, 249, 251, 0.95);
+  text-shadow: 0 0 18px rgba(248, 249, 251, 1), 0 0 8px rgba(248, 249, 251, 1), 0 0 3px rgba(248, 249, 251, 1);
 }
 
 html.webgl-grid-active .tone-dark .section-head h2,
@@ -48,7 +48,7 @@ html.webgl-grid-active .tone-dark .eyebrow,
 html.webgl-grid-active .hero h1,
 html.webgl-grid-active .hero__lede,
 html.webgl-grid-active .footer__inner {
-  text-shadow: 0 0 16px rgba(11, 18, 32, 0.85), 0 0 5px rgba(11, 18, 32, 0.85);
+  text-shadow: 0 0 20px rgba(11, 18, 32, 0.95), 0 0 9px rgba(11, 18, 32, 0.95), 0 0 3px rgba(11, 18, 32, 0.95);
 }
 
 .eyebrow {
@@ -123,9 +123,14 @@ html.webgl-grid-active .footer__inner {
 /* Once the page-wide animated grid (js/interactive-grid.js) is up and
    running, dark sections go transparent to reveal it instead of their own
    static background — the canvas paints an identical dark backdrop full
-   page height, so this is a seamless handoff, not a visible swap. */
-html.webgl-grid-active main .tone-dark,
-html.webgl-grid-active footer.tone-dark {
+   page height, so this is a seamless handoff, not a visible swap.
+   The footer is deliberately excluded: it's short enough that its own
+   "which section is this" sample point and the footer's actual on-screen
+   position can disagree right at the very bottom of the page, which
+   showed up as washed-out footer text. Keeping the footer solid avoids
+   that edge case entirely — a small, worthwhile trade for a section this
+   minor. */
+html.webgl-grid-active main .tone-dark {
   background-color: transparent;
   background-image: none;
 }
@@ -145,7 +150,7 @@ html.webgl-grid-active footer.tone-dark {
    sitting on top keep their own solid backgrounds (untouched here), so
    only the open space around them reveals the ambient grid. */
 html.webgl-grid-active main .tone-light {
-  background: rgba(248, 249, 251, 0.72);
+  background: rgba(248, 249, 251, 0.62);
 }
 
 .tone-light--raised {
@@ -153,7 +158,7 @@ html.webgl-grid-active main .tone-light {
 }
 
 html.webgl-grid-active main .tone-light--raised {
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .text-muted {
