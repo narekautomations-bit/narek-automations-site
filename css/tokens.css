@@ -12,9 +12,13 @@
   /* ---- Color: ink (dark) ---- */
   --color-ink: #0b1220;
   --color-ink-raised: #131c31;
-  --color-ink-line: rgba(255, 255, 255, 0.09);
-  --color-ink-text: #f4f6f9;
-  --color-ink-text-muted: #9aa7bb;
+  /* Hairlines and muted text both run over a live grid, a log-rain layer
+     and a wireframe skyline rather than a flat panel, so they're set
+     higher than a static dark theme would need — at 0.09 and #9aa7bb they
+     measured fine against flat ink and still disappeared on the page. */
+  --color-ink-line: rgba(255, 255, 255, 0.16);
+  --color-ink-text: #f7f9fc;
+  --color-ink-text-muted: #bcc7d8;
 
   /* ---- Color: paper (light) ---- */
   --color-paper: #f8f9fb;

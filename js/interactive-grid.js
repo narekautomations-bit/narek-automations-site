@@ -70,84 +70,185 @@ const FRAGMENT_SHADER = `
   }
 `;
 
-// Unit building: x/y in [-0.5, 0.5], z from 0 to 1, so scaling z grows it
-// upward with its base staying put on the plane.
+// ---------------------------------------------------------------------
+// Towers
+// ---------------------------------------------------------------------
+// Built in unit space: the plan sits inside x/y of [-0.5, 0.5] and the
+// profile runs from z = 0 upward, so scaling z grows a tower out of the
+// plane with its base staying put.
 //
-// A plain twelve-edge box reads as a crate, not a tower. Three things fix
-// that, and they're the same three that make the difference in a real
-// wireframe skyline: a dense run of verticals down every face (the
-// facade), floor rings at a constant *world* spacing so a tall tower
-// visibly has more floors than a short one, and a silhouette that steps
-// back once or twice on the way up, sometimes finishing in a spire.
+// Every tower is generated from two independent pieces — a plan (the
+// floorplate outline) and a profile (how the footprint scales on the way
+// up) — which is what produces variety instead of 26 shoeboxes. Setbacks,
+// continuous taper, podiums and crowns are all just shapes of the same
+// profile, so they all fall out of one loop.
+
+// Floorplate outline, as points around the perimeter.
+function towerPlan(rand) {
+  const kind = rand();
+  if (kind < 0.3) {
+    // Chamfered corners: the single cheapest thing that stops a tower
+    // reading as a shoebox.
+    const c = 0.13 + rand() * 0.14;
+    return [
+      [-0.5 + c, -0.5],
+      [0.5 - c, -0.5],
+      [0.5, -0.5 + c],
+      [0.5, 0.5 - c],
+      [0.5 - c, 0.5],
+      [-0.5 + c, 0.5],
+      [-0.5, 0.5 - c],
+      [-0.5, -0.5 + c],
+    ];
+  }
+  if (kind < 0.46) {
+    // Cruciform — a real high-rise floorplate, and in wireframe it reads
+    // completely differently from a box.
+    const a = 0.15 + rand() * 0.11;
+    return [
+      [-a, -0.5],
+      [a, -0.5],
+      [a, -a],
+      [0.5, -a],
+      [0.5, a],
+      [a, a],
+      [a, 0.5],
+      [-a, 0.5],
+      [-a, a],
+      [-0.5, a],
+      [-0.5, -a],
+      [-a, -a],
+    ];
+  }
+  return [
+    [-0.5, -0.5],
+    [0.5, -0.5],
+    [0.5, 0.5],
+    [-0.5, 0.5],
+  ];
+}
+
+// Footprint scale as a function of height, as {z, s} control points. Two
+// entries sharing a z is a setback — the ledge between them.
+function towerProfile(rand) {
+  const p = [];
+  let z = 0;
+
+  // Podium: a wider block of low floors at street level.
+  if (rand() < 0.42) {
+    const h = 0.05 + rand() * 0.07;
+    const ps = 1.18 + rand() * 0.3;
+    p.push({ z: 0, s: ps }, { z: h, s: ps }, { z: h, s: 1 });
+    z = h;
+  } else {
+    p.push({ z: 0, s: 1 });
+  }
+
+  const style = rand();
+  if (style < 0.26) {
+    // Tapered shaft, narrowing the whole way up.
+    p.push({ z: 1, s: 0.6 + rand() * 0.26 });
+  } else if (style < 0.52) {
+    // Flat-topped slab with a slight batter.
+    p.push({ z: 1, s: 0.9 + rand() * 0.1 });
+  } else if (style < 0.8) {
+    // One setback, then a slimmer upper shaft.
+    const zb = z + (1 - z) * (0.44 + rand() * 0.26);
+    p.push({ z: zb, s: 0.95 });
+    const upper = 0.6 + rand() * 0.18;
+    p.push({ z: zb, s: upper }, { z: 1, s: upper * (0.88 + rand() * 0.12) });
+  } else {
+    // Ziggurat: Art Deco stepping, two or three setbacks.
+    const steps = 2 + Math.floor(rand() * 2);
+    let cur = 1;
+    let zc = z;
+    for (let i = 0; i < steps; i++) {
+      const zn = Math.min(0.94, zc + ((1 - zc) / (steps - i)) * (0.65 + rand() * 0.4));
+      p.push({ z: zn, s: cur });
+      cur *= 0.58 + rand() * 0.22;
+      p.push({ z: zn, s: cur });
+      zc = zn;
+    }
+    p.push({ z: 1, s: cur });
+  }
+
+  // Crown: either a pyramid cap or a projecting slab roof.
+  const crown = rand();
+  const topS = p[p.length - 1].s;
+  if (crown < 0.3) {
+    p.push({ z: 1 + 0.05 + rand() * 0.11, s: topS * (0.08 + rand() * 0.22) });
+  } else if (crown < 0.46) {
+    p.push({ z: 1.03, s: topS * 1.14 }, { z: 1.06, s: topS * 1.14 });
+  }
+  return p;
+}
+
 function towerGeometry(THREE, rand, worldHeight) {
   const pts = [];
   const seg = (x1, y1, z1, x2, y2, z2) => pts.push(x1, y1, z1, x2, y2, z2);
 
-  // Points around a square, corners included, subdivided per edge. These
-  // are where the verticals run.
-  const perimeter = (half, perEdge) => {
-    const corners = [
-      [-half, -half],
-      [half, -half],
-      [half, half],
-      [-half, half],
-    ];
-    const out = [];
-    for (let i = 0; i < 4; i++) {
-      const [x1, y1] = corners[i];
-      const [x2, y2] = corners[(i + 1) % 4];
-      for (let k = 0; k < perEdge; k++) {
-        const t = k / perEdge;
-        out.push([x1 + (x2 - x1) * t, y1 + (y2 - y1) * t]);
-      }
+  const plan = towerPlan(rand);
+  const profile = towerProfile(rand);
+  const topZ = profile[profile.length - 1].z;
+
+  // Extra points along each plan edge. These are the facade mullions, and
+  // they carry most of the density that makes a wireframe tower look like
+  // a building rather than a crate.
+  const perEdge = plan.length > 8 ? 1 : 2 + Math.floor(rand() * 3);
+  const outline = [];
+  for (let i = 0; i < plan.length; i++) {
+    const [x1, y1] = plan[i];
+    const [x2, y2] = plan[(i + 1) % plan.length];
+    for (let k = 0; k < perEdge; k++) {
+      const t = k / perEdge;
+      outline.push([x1 + (x2 - x1) * t, y1 + (y2 - y1) * t]);
     }
-    return out;
-  };
-
-  const style = rand();
-  // [top of tier as a fraction of total height, footprint scale]
-  let tiers;
-  if (style < 0.4) tiers = [[1, 1]];
-  else if (style < 0.78) tiers = [[0.66, 1], [1, 0.64]];
-  else tiers = [[0.54, 1], [0.82, 0.7], [1, 0.42]];
-
-  const perEdge = 2 + Math.floor(rand() * 3);
-  // World units between floors. Constant across the skyline, so floor
-  // density is what tells you how tall something is.
-  const floorSpacing = 0.12;
-  const floors = Math.max(3, Math.round(worldHeight / floorSpacing));
-
-  let base = 0;
-  for (const [top, scale] of tiers) {
-    const half = 0.5 * scale;
-    const ring = perimeter(half, perEdge);
-
-    for (const [x, y] of ring) seg(x, y, base, x, y, top);
-
-    // Corner-square rings only: the verticals already carry the density,
-    // and ringing every perimeter point triples the geometry for nothing.
-    const corners = [
-      [-half, -half],
-      [half, -half],
-      [half, half],
-      [-half, half],
-    ];
-    for (let f = 0; f <= floors; f++) {
-      const z = base + (top - base) * (f / floors);
-      if (z < base - 1e-6 || z > top + 1e-6) continue;
-      for (let i = 0; i < 4; i++) {
-        const [x1, y1] = corners[i];
-        const [x2, y2] = corners[(i + 1) % 4];
-        seg(x1, y1, z, x2, y2, z);
-      }
-    }
-    base = top;
   }
 
-  // Spire, on the towers that stepped back — an antenna on a flat-topped
-  // slab looks wrong, on a tiered tower it looks like a landmark.
-  if (tiers.length > 1 && rand() < 0.55) {
-    seg(0, 0, 1, 0, 0, 1 + 0.07 + rand() * 0.16);
+  // Each mullion is one polyline through the whole profile, so a taper
+  // slants it, a setback puts a ledge in it, and a crown closes it.
+  for (const [px, py] of outline) {
+    for (let i = 1; i < profile.length; i++) {
+      const a = profile[i - 1];
+      const b = profile[i];
+      seg(px * a.s, py * a.s, a.z, px * b.s, py * b.s, b.z);
+    }
+  }
+
+  const scaleAt = (z) => {
+    for (let i = 1; i < profile.length; i++) {
+      const a = profile[i - 1];
+      const b = profile[i];
+      if (z <= b.z) {
+        const span = b.z - a.z;
+        return span < 1e-6 ? b.s : a.s + (b.s - a.s) * ((z - a.z) / span);
+      }
+    }
+    return profile[profile.length - 1].s;
+  };
+
+  const ring = (z, sc) => {
+    for (let i = 0; i < plan.length; i++) {
+      const [x1, y1] = plan[i];
+      const [x2, y2] = plan[(i + 1) % plan.length];
+      seg(x1 * sc, y1 * sc, z, x2 * sc, y2 * sc, z);
+    }
+  };
+
+  // Floors at a constant world spacing, so floor count still reads as
+  // height across the whole skyline.
+  const floorSpacing = 0.135;
+  const floors = Math.max(3, Math.round((worldHeight * topZ) / floorSpacing));
+  for (let f = 0; f <= floors; f++) {
+    const z = (topZ * f) / floors;
+    ring(z, scaleAt(z));
+  }
+  // Both sides of every setback ledge, which the floor rings can't draw
+  // because two of them share a z.
+  for (const pt of profile) ring(pt.z, pt.s);
+
+  if (rand() < 0.34) {
+    seg(0, 0, topZ, 0, 0, topZ + 0.08 + rand() * 0.2);
   }
 
   const geometry = new THREE.BufferGeometry();
@@ -281,6 +382,10 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
       // it has to know how tall this one ends up.
       const tower = new THREE.LineSegments(towerGeometry(THREE, rand, height), makeSkylineMaterial());
       tower.position.set(side * (avenue + rand() * spread), depth, 0);
+      // Yaw about the tower's own vertical axis. Euler order is XYZ, so
+      // this is applied before the per-frame stand-up rotation on X,
+      // which is exactly the order a building needs.
+      tower.rotation.z = rand() * Math.PI * 2;
       tower.visible = false;
       skyline.add(tower);
       buildings.push({
@@ -400,7 +505,7 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     // Calm, legible by default — the mesh brightens locally near the
     // cursor/touch bump (see the fragment shader) rather than needing a
     // loud resting state to feel present.
-    const targetOpacity = 0.28 + targetDarkness * 0.16;
+    const targetOpacity = 0.25 + targetDarkness * 0.14;
 
     opacity += (targetOpacity - opacity) * 0.06;
     darkness += (targetDarkness - darkness) * 0.06;
@@ -446,7 +551,7 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     const standUp = progress * (-Math.PI / 2 - currentTilt);
     // Deliberately below the grid's own brightness: the skyline is depth,
     // not a foreground element, and page copy has to win over it.
-    const skylineOpacity = Math.min(isCompact ? 0.34 : 0.5, opacity * 0.95);
+    const skylineOpacity = Math.min(isCompact ? 0.3 : 0.44, opacity * 0.95);
     const rippleX = uniforms.uMouse.value.x;
     const rippleY = uniforms.uMouse.value.y;
 
