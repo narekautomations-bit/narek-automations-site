@@ -117,6 +117,23 @@ html.webgl-grid-active footer.tone-dark {
   color: var(--color-text);
 }
 
+/* Light sections need SOME transparency too, or the grid can never show
+   through them no matter what opacity it renders at underneath — a fully
+   opaque background blocks 100% of it regardless. Cards/forms/FAQ items
+   sitting on top keep their own solid backgrounds (untouched here), so
+   only the open space around them reveals the ambient grid. */
+html.webgl-grid-active main .tone-light {
+  background: rgba(248, 249, 251, 0.86);
+}
+
+.tone-light--raised {
+  background: var(--color-paper-raised);
+}
+
+html.webgl-grid-active main .tone-light--raised {
+  background: rgba(255, 255, 255, 0.86);
+}
+
 .text-muted {
   color: var(--color-text-muted);
 }

@@ -1,137 +1,94 @@
-// One persistent, full-page WebGL canvas: an animated "spreadsheet"
-// (grid lines + a filled header row + scattered filled "data" cells,
-// like an actual open workbook) that reacts to the cursor/touch anywhere
-// on the page. It starts near-flat and calm at the top (reads clearly as
-// an Excel grid) and gradually tilts into a more dramatic 3D mesh as the
-// page scrolls — one continuous effect, not a per-section replay.
+// One persistent, full-page WebGL canvas: an animated "spreadsheet" — a
+// procedural grid of thin cell borders, a filled header row, and scattered
+// colored data cells (green/amber, like conditional formatting) — that
+// reacts to the cursor/touch anywhere on the page. Starts near-flat and
+// calm at the top (reads as a plain Excel view) and gradually tilts into
+// a more dramatic 3D mesh as the page scrolls.
 //
-// Visibility is section-aware: strong over dark sections (hero, process,
-// footer), faded almost to nothing over light sections so body text stays
-// fully readable — but never literally removed from the DOM, so its
-// transform/scroll state keeps evolving underneath and picks up "further
-// along" next time a dark section scrolls into view.
+// The grid is drawn with real per-pixel alpha (a procedural border/fill
+// test in the fragment shader, not GPU line primitives): empty cell
+// interiors are fully transparent, only borders and filled cells carry
+// color. That matters because this canvas sits behind the *whole* page,
+// including light sections — earlier versions cleared to an opaque navy
+// backdrop everywhere, so blending it through a section's background
+// just produced a flat gray wash rather than a visible grid. Now the
+// renderer's clear alpha itself tracks the current section's darkness
+// (opaque navy behind dark sections, fully transparent behind light
+// ones), so light sections reveal only the actual grid lines/fills at
+// low opacity — a genuine subtle texture, not a tint.
 //
 // Fails soft: any missing WebGL support, error, or reduced-motion
 // preference just leaves the plain dark section backgrounds in place
 // (see the `webgl-grid-active` class toggle at the end).
 
-const LINE_VERTEX_SHADER = `
+const VERTEX_SHADER = `
   uniform float uTime;
   uniform vec2 uMouse;
   uniform float uAmplitude;
+  uniform float uRippleBoost;
+  varying vec2 vUv;
   varying float vElevation;
   void main() {
     vec3 pos = position;
     float wave = (sin(pos.x * 1.1 + uTime * 0.6) * 0.1 + sin(pos.y * 1.6 - uTime * 0.4) * 0.08) * uAmplitude;
-    float dist = distance(pos.xy, uMouse * 3.5);
-    float ripple = sin(dist * 2.5 - uTime * 2.0) * exp(-dist * 0.8) * 0.5 * (0.6 + uAmplitude * 0.4);
+    float dist = distance(pos.xy, uMouse);
+    float ripple = sin(dist * 2.5 - uTime * 2.4) * exp(-dist * 0.7) * 0.65 * (0.6 + uAmplitude * 0.4) * uRippleBoost;
     pos.z += wave + ripple;
     vElevation = pos.z;
+    vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `;
 
-const LINE_FRAGMENT_SHADER = `
-  uniform vec3 uColor;
-  uniform float uOpacity;
+const FRAGMENT_SHADER = `
+  uniform vec2 uCellCount;
+  uniform vec3 uColorLight;
+  uniform vec3 uColorDark;
+  uniform vec3 uHeaderColor;
+  uniform vec3 uGoodColor;
+  uniform vec3 uFlagColor;
+  uniform float uDarkness;
+  uniform float uOpacityLines;
+  uniform float uOpacityFills;
+  varying vec2 vUv;
   varying float vElevation;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+
   void main() {
-    float alpha = 0.24 + clamp(vElevation * 1.5, -0.14, 0.45);
-    gl_FragColor = vec4(uColor, alpha * 0.5 * uOpacity);
+    vec2 cellUv = vUv * uCellCount;
+    vec2 cellIndex = floor(cellUv);
+    vec2 localUv = fract(cellUv);
+
+    float edgeDist = min(min(localUv.x, 1.0 - localUv.x), min(localUv.y, 1.0 - localUv.y));
+    float lineAlpha = 1.0 - smoothstep(0.0, 0.05, edgeDist);
+
+    float h = hash(cellIndex + 7.0);
+    vec3 fillColor = vec3(0.0);
+    float fillAlpha = 0.0;
+    if (cellIndex.y < 1.0) {
+      fillColor = uHeaderColor;
+      fillAlpha = 0.55;
+    } else if (h < 0.08) {
+      fillColor = uGoodColor;
+      fillAlpha = 0.42;
+    } else if (h < 0.12) {
+      fillColor = uFlagColor;
+      fillAlpha = 0.36;
+    }
+
+    float elevationBoost = clamp(vElevation * 1.4, -0.15, 0.4);
+    vec3 lineColor = mix(uColorLight, uColorDark, uDarkness);
+
+    vec3 finalColor = mix(fillColor, lineColor, lineAlpha);
+    float finalAlpha = max(fillAlpha * uOpacityFills, lineAlpha * (0.6 + elevationBoost) * uOpacityLines);
+
+    if (finalAlpha < 0.012) discard;
+    gl_FragColor = vec4(finalColor, finalAlpha);
   }
 `;
-
-const FILL_VERTEX_SHADER = `
-  uniform float uTime;
-  uniform vec2 uMouse;
-  uniform float uAmplitude;
-  attribute float aAlpha;
-  varying float vAlpha;
-  void main() {
-    vec3 pos = position;
-    float wave = (sin(pos.x * 1.1 + uTime * 0.6) * 0.1 + sin(pos.y * 1.6 - uTime * 0.4) * 0.08) * uAmplitude;
-    float dist = distance(pos.xy, uMouse * 3.5);
-    float ripple = sin(dist * 2.5 - uTime * 2.0) * exp(-dist * 0.8) * 0.5 * (0.6 + uAmplitude * 0.4);
-    pos.z += wave + ripple;
-    vAlpha = aAlpha;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`;
-
-const FILL_FRAGMENT_SHADER = `
-  uniform vec3 uColor;
-  uniform float uOpacity;
-  varying float vAlpha;
-  void main() {
-    gl_FragColor = vec4(uColor, vAlpha * uOpacity);
-  }
-`;
-
-function buildLineGeometry(THREE, width, height, cols, rows) {
-  const positions = [];
-  const stepX = width / cols;
-  const stepY = height / rows;
-  const originX = -width / 2;
-  const originY = -height / 2;
-
-  for (let j = 0; j <= rows; j++) {
-    const y = originY + j * stepY;
-    for (let i = 0; i < cols; i++) {
-      positions.push(originX + i * stepX, y, 0, originX + (i + 1) * stepX, y, 0);
-    }
-  }
-  for (let i = 0; i <= cols; i++) {
-    const x = originX + i * stepX;
-    for (let j = 0; j < rows; j++) {
-      positions.push(x, originY + j * stepY, 0, x, originY + (j + 1) * stepY, 0);
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  return geometry;
-}
-
-// Builds every "cell" as a small inset quad so grid lines still frame it,
-// with a per-cell alpha: row 0 (header) reads strong/solid, a random
-// scatter of other cells reads faint (like populated data), the rest 0
-// (skipped entirely — no wasted vertices on empty cells).
-function buildFillGeometry(THREE, width, height, cols, rows, seed) {
-  const positions = [];
-  const alphas = [];
-  const stepX = width / cols;
-  const stepY = height / rows;
-  const originX = -width / 2;
-  const originY = -height / 2;
-  const inset = 0.12;
-
-  let rand = seed;
-  const next = () => {
-    rand = (rand * 9301 + 49297) % 233280;
-    return rand / 233280;
-  };
-
-  function addCell(i, j, alpha) {
-    const x0 = originX + (i + inset) * stepX;
-    const x1 = originX + (i + 1 - inset) * stepX;
-    const y0 = originY + (j + inset) * stepY;
-    const y1 = originY + (j + 1 - inset) * stepY;
-    positions.push(x0, y0, 0, x1, y0, 0, x1, y1, 0, x0, y0, 0, x1, y1, 0, x0, y1, 0);
-    for (let k = 0; k < 6; k++) alphas.push(alpha);
-  }
-
-  for (let i = 0; i < cols; i++) addCell(i, 0, 0.4);
-  for (let j = 1; j < rows; j++) {
-    for (let i = 0; i < cols; i++) {
-      if (next() < 0.14) addCell(i, j, 0.1 + next() * 0.14);
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("aAlpha", new THREE.Float32BufferAttribute(alphas, 1));
-  return geometry;
-}
 
 let threePromise = null;
 function loadThree() {
@@ -141,7 +98,7 @@ function loadThree() {
   return threePromise;
 }
 
-export async function initPageGrid({ canvasId = "page-webgl", color = 0x1fbf72 } = {}) {
+export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 } = {}) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
 
@@ -149,6 +106,13 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x1fbf72 }
   if (reduceMotion) return;
 
   const isCompact = window.innerWidth < 820;
+  const planeW = 9;
+  const planeH = 12;
+  // Half-extents the on-screen cursor/touch position maps into — using
+  // the plane's actual half-width/height means a touch near the top/
+  // bottom of the screen still lands inside the grid instead of the
+  // ripple center drifting outside the mesh.
+  const mouseScale = { x: planeW / 2, y: planeH / 2 };
 
   let THREE;
   try {
@@ -157,14 +121,10 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x1fbf72 }
     return;
   }
 
-  let renderer, scene, camera, uniformsLines, uniformsFill, clock;
+  let renderer, scene, camera, uniforms, clock;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !isCompact });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isCompact ? 1.5 : 2));
-    // Opaque dark-navy clear so this single canvas can sit behind the
-    // whole page: dark sections go transparent to reveal it (see the
-    // .webgl-grid-active CSS rule), light sections simply paint their own
-    // opaque background on top, hiding it completely.
     renderer.setClearColor(0x0b1220, 1);
 
     scene = new THREE.Scene();
@@ -173,45 +133,33 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x1fbf72 }
 
     const cols = isCompact ? 16 : 28;
     const rows = isCompact ? 22 : 34;
-    const planeW = 9;
-    const planeH = 12;
 
-    const lineGeo = buildLineGeometry(THREE, planeW, planeH, cols, rows);
-    uniformsLines = {
+    const geometry = new THREE.PlaneGeometry(planeW, planeH, cols, rows);
+    uniforms = {
       uTime: { value: 0 },
       uMouse: { value: new THREE.Vector2(0, 0) },
-      uColor: { value: new THREE.Color(color) },
-      uOpacity: { value: 0 },
+      uCellCount: { value: new THREE.Vector2(cols, rows) },
+      uColorLight: { value: new THREE.Color(0x4b5a72) },
+      uColorDark: { value: new THREE.Color(color) },
+      uHeaderColor: { value: new THREE.Color(0x8fa2c2) },
+      uGoodColor: { value: new THREE.Color(0x2fcf8e) },
+      uFlagColor: { value: new THREE.Color(0xe0a23a) },
+      uDarkness: { value: 1 },
+      uOpacityLines: { value: 0 },
+      uOpacityFills: { value: 0 },
       uAmplitude: { value: 0.3 },
+      uRippleBoost: { value: 1 },
     };
-    const lineMat = new THREE.ShaderMaterial({
-      uniforms: uniformsLines,
+    const material = new THREE.ShaderMaterial({
+      uniforms,
       transparent: true,
-      vertexShader: LINE_VERTEX_SHADER,
-      fragmentShader: LINE_FRAGMENT_SHADER,
+      side: THREE.DoubleSide,
+      vertexShader: VERTEX_SHADER,
+      fragmentShader: FRAGMENT_SHADER,
     });
-    const lines = new THREE.LineSegments(lineGeo, lineMat);
-    scene.add(lines);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
 
-    const fillGeo = buildFillGeometry(THREE, planeW, planeH, cols, rows, 42);
-    uniformsFill = {
-      uTime: { value: 0 },
-      uMouse: { value: new THREE.Vector2(0, 0) },
-      uColor: { value: new THREE.Color(color) },
-      uOpacity: { value: 0 },
-      uAmplitude: { value: 0.3 },
-    };
-    const fillMat = new THREE.ShaderMaterial({
-      uniforms: uniformsFill,
-      transparent: true,
-      vertexShader: FILL_VERTEX_SHADER,
-      fragmentShader: FILL_FRAGMENT_SHADER,
-    });
-    const fills = new THREE.Mesh(fillGeo, fillMat);
-    scene.add(fills);
-
-    // Both meshes are rotated/positioned together as one rig so lines and
-    // fills stay perfectly aligned.
     scene.rotation.x = -0.4;
     scene.position.y = -1.6;
     scene.position.z = -1;
@@ -234,8 +182,8 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x1fbf72 }
   const mouseTarget = { x: 0, y: 0 };
   const mouseSmooth = { x: 0, y: 0 };
   function setTargetFromPoint(clientX, clientY) {
-    mouseTarget.x = (clientX / window.innerWidth) * 2 - 1;
-    mouseTarget.y = -((clientY / window.innerHeight) * 2 - 1);
+    mouseTarget.x = ((clientX / window.innerWidth) * 2 - 1) * mouseScale.x;
+    mouseTarget.y = -((clientY / window.innerHeight) * 2 - 1) * mouseScale.y;
   }
   window.addEventListener("mousemove", (e) => setTargetFromPoint(e.clientX, e.clientY));
   window.addEventListener(
@@ -262,7 +210,9 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x1fbf72 }
   computeZones();
   window.addEventListener("resize", () => setTimeout(computeZones, 150));
 
-  let currentOpacity = 0;
+  let lineOpacity = 0;
+  let fillOpacity = 0;
+  let darkness = 1;
   let currentTilt = -0.4;
   let currentAmplitude = 0.3;
 
@@ -278,24 +228,39 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x1fbf72 }
 
     const viewCenter = scrollY + window.innerHeight * 0.4;
     const zone = zones.find((z) => viewCenter >= z.top && viewCenter < z.bottom);
-    const targetOpacity = zone ? (zone.dark ? 1 : 0.05) : 0.05;
+    const dark = zone ? zone.dark : true;
+    // Lines stay meaningfully visible everywhere — a real grid texture the
+    // whole way down the page, not just in dark sections. Fills (the
+    // louder colored cells) recede hard over light sections so they never
+    // compete with body text.
+    const targetLineOpacity = dark ? 0.85 : 0.55;
+    const targetFillOpacity = dark ? 0.9 : 0.12;
 
-    currentOpacity += (targetOpacity - currentOpacity) * 0.06;
+    lineOpacity += (targetLineOpacity - lineOpacity) * 0.06;
+    fillOpacity += (targetFillOpacity - fillOpacity) * 0.06;
+    darkness += ((dark ? 1 : 0) - darkness) * 0.06;
     currentTilt += (targetTilt - currentTilt) * 0.04;
     currentAmplitude += (targetAmplitude - currentAmplitude) * 0.04;
 
-    const touchBoost = isCompact ? 1.4 : 1;
-    mouseSmooth.x += (mouseTarget.x - mouseSmooth.x) * (isCompact ? 0.16 : 0.06);
-    mouseSmooth.y += (mouseTarget.y - mouseSmooth.y) * (isCompact ? 0.16 : 0.06);
+    const lerp = isCompact ? 0.24 : 0.1;
+    mouseSmooth.x += (mouseTarget.x - mouseSmooth.x) * lerp;
+    mouseSmooth.y += (mouseTarget.y - mouseSmooth.y) * lerp;
 
     scene.rotation.x = currentTilt;
     const t = clock.getElapsedTime();
-    [uniformsLines, uniformsFill].forEach((u) => {
-      u.uTime.value = t;
-      u.uMouse.value.set(mouseSmooth.x * touchBoost, mouseSmooth.y * touchBoost);
-      u.uOpacity.value = currentOpacity;
-      u.uAmplitude.value = currentAmplitude;
-    });
+
+    uniforms.uTime.value = t;
+    uniforms.uMouse.value.set(mouseSmooth.x, mouseSmooth.y);
+    uniforms.uOpacityLines.value = lineOpacity;
+    uniforms.uOpacityFills.value = fillOpacity;
+    uniforms.uAmplitude.value = currentAmplitude;
+    uniforms.uRippleBoost.value = isCompact ? 1.8 : 1;
+    uniforms.uDarkness.value = darkness;
+
+    // The canvas's own background: opaque navy behind dark sections (a
+    // solid backdrop), fully transparent behind light ones (so only the
+    // shader's own line/fill pixels show through them at all).
+    renderer.setClearAlpha(darkness);
 
     renderer.render(scene, camera);
     rafId = requestAnimationFrame(frame);
