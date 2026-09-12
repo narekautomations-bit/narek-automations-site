@@ -1,0 +1,77 @@
+/* ============================================================
+   Design tokens — Narek Automations
+   Palette rationale: deep ledger-ink navy (trust, professional
+   services) + emerald "profit/ledger" green accent (positive
+   numbers, savings, CTAs). Avoids purple/pink AI-gradient cliché.
+   Type: Space Grotesk (geometric, faint nod to spreadsheet-grid
+   letterforms) for headings, Source Sans 3 for body, IBM Plex
+   Mono for data/formula accents.
+   ============================================================ */
+
+:root {
+  /* ---- Color: ink (dark) ---- */
+  --color-ink: #0b1220;
+  --color-ink-raised: #131c31;
+  --color-ink-line: rgba(255, 255, 255, 0.09);
+  --color-ink-text: #f4f6f9;
+  --color-ink-text-muted: #9aa7bb;
+
+  /* ---- Color: paper (light) ---- */
+  --color-paper: #f8f9fb;
+  --color-paper-raised: #ffffff;
+  --color-line: #e3e6ec;
+  --color-text: #12182a;
+  --color-text-muted: #57617a;
+
+  /* ---- Color: accent (ledger green) ---- */
+  --color-accent: #0c8f52;
+  --color-accent-strong: #086a3d;
+  --color-accent-soft: #e5f5ec;
+  --color-accent-text-on: #ffffff;
+
+  /* ---- Color: signal ---- */
+  --color-flag: #c2410c;
+  --color-flag-soft: #fdece1;
+
+  /* ---- Type families ---- */
+  --font-heading: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "Consolas", monospace;
+
+  /* ---- Type scale ---- */
+  --text-xs: 0.8rem;
+  --text-sm: 0.925rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.6rem;
+  --text-2xl: 2.1rem;
+  --text-3xl: 2.85rem;
+  --text-4xl: clamp(2.1rem, 3vw + 1rem, 3.3rem);
+
+  /* ---- Spacing scale ---- */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1.25rem;
+  --space-md: 2rem;
+  --space-lg: 3.25rem;
+  --space-xl: 5.5rem;
+  --space-2xl: 8.5rem;
+
+  /* ---- Layout ---- */
+  --content-width: 1180px;
+  --content-pad: clamp(1.25rem, 4vw, 3rem);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+
+  /* ---- Motion ---- */
+  --duration-fast: 180ms;
+  --duration-base: 320ms;
+  --duration-slow: 600ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---- Shadow ---- */
+  --shadow-card: 0 1px 2px rgba(11, 18, 32, 0.04), 0 12px 32px -16px rgba(11, 18, 32, 0.18);
+  --shadow-raised: 0 4px 10px rgba(11, 18, 32, 0.06), 0 24px 48px -20px rgba(11, 18, 32, 0.28);
+}

@@ -1,0 +1,43 @@
+/* Elements start hidden pre-JS-init only if JS is enabled; a no-JS
+   fallback class keeps content visible if scripts fail to load. */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.js-ready .reveal {
+  transition: none; /* GSAP drives the actual animation, not CSS transitions */
+}
+
+.no-js .reveal,
+.reveal.is-shown-fallback {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.formula-bar__text[data-typing="true"] {
+  border-right: none;
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo__file-chip {
+    animation: float-y 4.5s ease-in-out infinite;
+  }
+}
