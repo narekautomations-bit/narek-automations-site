@@ -137,29 +137,14 @@
   position: relative;
 }
 
-.hero__bg-grid {
-  position: absolute;
+.page-webgl-canvas {
+  position: fixed;
   inset: 0;
-  background-image: linear-gradient(var(--color-ink-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-ink-line) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, #000 40%, transparent 100%);
-  pointer-events: none;
-  transition: opacity 0.4s var(--ease-out);
-}
-
-.hero__bg-grid[data-webgl-active="true"],
-.section-grid-bg[data-webgl-active="true"] {
-  opacity: 0;
-}
-
-.section-webgl-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   display: block;
   pointer-events: none;
+  z-index: 0;
 }
 
 .hero__inner {
@@ -490,17 +475,6 @@
 /* ============================================================
    Process steps
    ============================================================ */
-.section-grid-bg {
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(var(--color-ink-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-ink-line) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 70% 65% at 50% 0%, #000 25%, transparent 85%);
-  pointer-events: none;
-  transition: opacity 0.4s var(--ease-out);
-}
-
 .process-steps {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

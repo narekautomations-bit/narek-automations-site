@@ -90,8 +90,22 @@ section {
 
 /* ---- Tone blocks (dark ink sections vs. light paper sections) ---- */
 .tone-dark {
-  background: var(--color-ink);
+  background-color: var(--color-ink);
+  background-image: linear-gradient(var(--color-ink-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-ink-line) 1px, transparent 1px);
+  background-size: 64px 64px;
   color: var(--color-ink-text);
+  transition: background-color 0.4s ease;
+}
+
+/* Once the page-wide animated grid (js/interactive-grid.js) is up and
+   running, dark sections go transparent to reveal it instead of their own
+   static background — the canvas paints an identical dark backdrop full
+   page height, so this is a seamless handoff, not a visible swap. */
+html.webgl-grid-active main .tone-dark,
+html.webgl-grid-active footer.tone-dark {
+  background-color: transparent;
+  background-image: none;
 }
 
 .tone-dark .text-muted {

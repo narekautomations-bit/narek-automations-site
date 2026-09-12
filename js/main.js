@@ -3,7 +3,7 @@ import { initSmoothScroll } from "./smooth-scroll.js";
 import { initMotion } from "./motion.js";
 import { initKineticText } from "./kinetic-text.js";
 import { initMagneticButtons } from "./magnetic.js";
-import { initInteractiveGrid } from "./interactive-grid.js";
+import { initPageGrid } from "./interactive-grid.js";
 import { initChatWidget } from "./chat-widget.js";
 import { initContactForm } from "./contact-form.js";
 import { initFaqAccordion } from "./faq-accordion.js";
@@ -37,12 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initMotion();
   initKineticText();
   initMagneticButtons();
-  initInteractiveGrid({ canvasId: "hero-webgl", gridFallbackId: "hero-bg-grid", sectionSelector: "#top" });
-  initInteractiveGrid({
-    canvasId: "process-webgl",
-    gridFallbackId: "process-bg-grid",
-    sectionSelector: "#how-it-works",
-  });
+  initPageGrid();
   initChatWidget();
   initContactForm();
   initFaqAccordion();
