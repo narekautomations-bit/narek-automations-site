@@ -63,6 +63,11 @@
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg> Built by accountants</span>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg> One build &mdash; yours forever</span>
         </div>
+
+        <p class="hero-note reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75l2.25 2.25L15 9.75M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>
+          Runs on your own machine, as often as you like &mdash; no subscription, no per-use fee.
+        </p>
       </div>
 
       <!-- Pulls the eye down the page instead of into the menu. -->
@@ -81,7 +86,7 @@
           <h2>One click, and the whole run happens</h2>
         </div>
         <div class="runflow" id="run-flow">
-          <svg class="runflow__wires" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <svg class="runflow__wires runflow__wires--wide" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true" focusable="false">
             <g class="runflow__wire-group" style="--w: 1;">
               <path class="runflow__wire" pathLength="100" vector-effect="non-scaling-stroke" d="M276 134L380 230"/>
               <path class="runflow__dot" pathLength="100" vector-effect="non-scaling-stroke" d="M276 134L380 230"/>
@@ -107,45 +112,71 @@
               <path class="runflow__dot" pathLength="100" vector-effect="non-scaling-stroke" d="M620 330L724 426"/>
             </g>
           </svg>
+          <svg class="runflow__wires runflow__wires--tall" viewBox="0 0 700 1150" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <g class="runflow__wire-group" style="--w: 1;">
+              <path class="runflow__wire" pathLength="100" vector-effect="non-scaling-stroke" d="M119 175L280 468"/>
+              <path class="runflow__dot" pathLength="100" vector-effect="non-scaling-stroke" d="M119 175L280 468"/>
+            </g>
+            <g class="runflow__wire-group" style="--w: 2;">
+              <path class="runflow__wire" pathLength="100" vector-effect="non-scaling-stroke" d="M350 175L350 468"/>
+              <path class="runflow__dot" pathLength="100" vector-effect="non-scaling-stroke" d="M350 175L350 468"/>
+            </g>
+            <g class="runflow__wire-group" style="--w: 3;">
+              <path class="runflow__wire" pathLength="100" vector-effect="non-scaling-stroke" d="M581 175L420 468"/>
+              <path class="runflow__dot" pathLength="100" vector-effect="non-scaling-stroke" d="M581 175L420 468"/>
+            </g>
+            <g class="runflow__wire-group" style="--w: 1;">
+              <path class="runflow__wire" pathLength="100" vector-effect="non-scaling-stroke" d="M280 683L119 976"/>
+              <path class="runflow__dot" pathLength="100" vector-effect="non-scaling-stroke" d="M280 683L119 976"/>
+            </g>
+            <g class="runflow__wire-group" style="--w: 2;">
+              <path class="runflow__wire" pathLength="100" vector-effect="non-scaling-stroke" d="M350 683L350 976"/>
+              <path class="runflow__dot" pathLength="100" vector-effect="non-scaling-stroke" d="M350 683L350 976"/>
+            </g>
+            <g class="runflow__wire-group" style="--w: 3;">
+              <path class="runflow__wire" pathLength="100" vector-effect="non-scaling-stroke" d="M420 683L581 976"/>
+              <path class="runflow__dot" pathLength="100" vector-effect="non-scaling-stroke" d="M420 683L581 976"/>
+            </g>
+          </svg>
           <ul class="runflow__nodes">
-            <li class="runflow__node" data-flow="in" style="--nx: 17.5%; --ny: 17%; --i: 1;">
+            <li class="runflow__node" data-flow="in" style="--nx: 17.5%; --ny: 17%; --mx: 17%; --my: 8%; --i: 1;">
               <div class="runflow__box">
                 <h4>Excel exports</h4>
                 <p>Any layout, any size</p>
               </div>
             </li>
-            <li class="runflow__node" data-flow="in" style="--nx: 11%; --ny: 50%; --i: 2;">
+            <li class="runflow__node" data-flow="in" style="--nx: 11%; --ny: 50%; --mx: 50%; --my: 8%; --i: 2;">
               <div class="runflow__box">
                 <h4>Bank statements</h4>
                 <p>PDF or CSV</p>
               </div>
             </li>
-            <li class="runflow__node" data-flow="in" style="--nx: 17.5%; --ny: 83%; --i: 3;">
+            <li class="runflow__node" data-flow="in" style="--nx: 17.5%; --ny: 83%; --mx: 83%; --my: 8%; --i: 3;">
               <div class="runflow__box">
                 <h4>Your templates</h4>
                 <p>Word and Excel</p>
               </div>
             </li>
-            <li class="runflow__node runflow__node--hub" data-flow="hub" style="--nx: 50%; --ny: 50%; --i: 0;">
+            <li class="runflow__node runflow__node--hub" data-flow="hub" style="--nx: 50%; --ny: 50%; --mx: 50%; --my: 50%; --i: 0;">
               <div class="runflow__box">
                 <span class="runflow__kicker">your automation</span>
                 <h4>One click runs it</h4>
                 <p>Reads, matches, rebuilds</p>
               </div>
             </li>
-            <li class="runflow__node" data-flow="out" style="--nx: 82.5%; --ny: 17%; --i: 1;">
+            <li class="runflow__node" data-flow="out" style="--nx: 82.5%; --ny: 17%; --mx: 17%; --my: 92%; --i: 1;">
               <div class="runflow__box">
                 <h4>Reconciled workbook</h4>
                 <p>Tied out and formatted</p>
               </div>
             </li>
-            <li class="runflow__node" data-flow="out" style="--nx: 89%; --ny: 50%; --i: 2;">
+            <li class="runflow__node" data-flow="out" style="--nx: 89%; --ny: 50%; --mx: 50%; --my: 92%; --i: 2;">
               <div class="runflow__box">
                 <h4>Client-ready PDFs</h4>
                 <p>Named and filed</p>
               </div>
             </li>
-            <li class="runflow__node" data-flow="out" style="--nx: 82.5%; --ny: 83%; --i: 3;">
+            <li class="runflow__node" data-flow="out" style="--nx: 82.5%; --ny: 83%; --mx: 83%; --my: 92%; --i: 3;">
               <div class="runflow__box">
                 <h4>Exceptions flagged</h4>
                 <p>Nothing slips through</p>

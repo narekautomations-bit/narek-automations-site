@@ -14,6 +14,16 @@
 // Touch/cursor response is real spring physics (position + velocity),
 // not a plain exponential smoothing — it should follow with a natural,
 // slightly elastic quality rather than either lagging flatly or jumping.
+// When nothing has been pointing at it for a few seconds the ripple
+// drifts on its own orbit, which is what keeps the surface alive on a
+// phone — there's no cursor there, so without it the mesh just sits
+// still until someone happens to drag a finger across it.
+//
+// A wireframe skyline rises out of the plane as the page scrolls, in step
+// with the tilt: nothing at the top of the page, a full city by the
+// bottom. The buildings are children of the same scene, so they tilt with
+// the grid and stay locked to its drift, and they leave an avenue down
+// the middle so page content never has to compete with them.
 //
 // Fails soft: any missing WebGL support, error, or reduced-motion
 // preference just leaves the plain dark section backgrounds in place
@@ -57,6 +67,44 @@ const FRAGMENT_SHADER = `
   }
 `;
 
+// Unit building: x/y in [-0.5, 0.5], z from 0 to 1. Scaling z therefore
+// grows it upward out of the plane with its base staying put. The floor
+// rings are what separate "digital skyscraper" from "wireframe box".
+function buildingGeometry(THREE, rings = 4) {
+  const pts = [];
+  const corners = [
+    [-0.5, -0.5],
+    [0.5, -0.5],
+    [0.5, 0.5],
+    [-0.5, 0.5],
+  ];
+  corners.forEach(([x, y]) => pts.push(x, y, 0, x, y, 1));
+  const levels = [0, 1];
+  for (let i = 1; i <= rings; i++) levels.push(i / (rings + 1));
+  levels.forEach((z) => {
+    for (let i = 0; i < 4; i++) {
+      const [x1, y1] = corners[i];
+      const [x2, y2] = corners[(i + 1) % 4];
+      pts.push(x1, y1, z, x2, y2, z);
+    }
+  });
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  return geometry;
+}
+
+// Deterministic, so the skyline is the same one on every visit.
+function makeRandom(seed) {
+  let a = seed >>> 0;
+  return function random() {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 let threePromise = null;
 function loadThree() {
   if (!threePromise) {
@@ -87,6 +135,9 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
   }
 
   let renderer, scene, camera, uniforms, clock, mesh, cellH;
+  let skyline = null;
+  let skylineMaterial = null;
+  const buildings = [];
   try {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !isCompact });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isCompact ? 1.5 : 2));
@@ -127,6 +178,52 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     scene.position.y = -1.6;
     scene.position.z = -1;
 
+    // ---- Skyline -------------------------------------------------------
+    skyline = new THREE.Group();
+    scene.add(skyline);
+
+    const shape = buildingGeometry(THREE, 3);
+    skylineMaterial = new THREE.LineBasicMaterial({
+      color: 0x7fe8b4,
+      transparent: true,
+      opacity: 0,
+      // The grid is drawn transparent too; not writing depth keeps the two
+      // from fighting over which is in front at their intersections.
+      depthWrite: false,
+    });
+
+    const rand = makeRandom(0xc1745);
+    const towerCount = isCompact ? 14 : 26;
+    for (let i = 0; i < towerCount; i++) {
+      // Alternating sides, never inside x = ±2.1. Page content spans most
+      // of the container, not just its middle, so the avenue has to be
+      // wide enough that towers stay outside the text rather than
+      // crossing it.
+      const side = i % 2 ? 1 : -1;
+      const tower = new THREE.LineSegments(shape, skylineMaterial);
+      // y is depth up the tilted plane. Starting at 4.5 rather than at the
+      // frame edge keeps the near foreground clear and reads as a skyline
+      // on the horizon instead of towers looming over the copy.
+      const depth = 4.5 + rand() * 9.5;
+      tower.position.set(side * (2.1 + rand() * 5.2), depth, 0);
+      const footprintX = 0.16 + rand() * 0.24;
+      const footprintY = 0.16 + rand() * 0.24;
+      // Nearer towers are drawn shorter so they don't swamp the frame.
+      const height = (1.1 + rand() * 3.4) * (0.6 + Math.min(1, depth / 8) * 0.6);
+      tower.visible = false;
+      skyline.add(tower);
+      buildings.push({
+        obj: tower,
+        footprintX,
+        footprintY,
+        height,
+        // Staggered thresholds so the city grows in waves down the page
+        // rather than every tower stretching in unison.
+        riseStart: 0.04 + rand() * 0.52,
+        riseSpan: 0.22 + rand() * 0.26,
+      });
+    }
+
     clock = new THREE.Clock();
   } catch {
     return;
@@ -145,17 +242,31 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
   // Spring-based follow (position + velocity) instead of plain exponential
   // smoothing — reads as a natural, slightly elastic response rather than
   // either laggy or robotic.
+  // Where the pointer last was, where the spring currently is, and the
+  // blended target the spring actually chases (pointer vs. idle orbit).
+  const pointerTarget = { x: 0, y: 0 };
   const mouseTarget = { x: 0, y: 0 };
   const mousePos = { x: 0, y: 0 };
   const mouseVel = { x: 0, y: 0 };
+  // Seconds since the last real pointer input, used to fade between
+  // following the pointer and the idle orbit.
+  let lastPointAt = -999;
+  // Briefly boosted by a tap so a single touch reads as a hit rather than
+  // as nothing happening.
+  let tapPulse = 0;
   function setTargetFromPoint(clientX, clientY) {
-    mouseTarget.x = ((clientX / window.innerWidth) * 2 - 1) * mouseScale.x;
-    mouseTarget.y = -((clientY / window.innerHeight) * 2 - 1) * mouseScale.y;
+    pointerTarget.x = ((clientX / window.innerWidth) * 2 - 1) * mouseScale.x;
+    pointerTarget.y = -((clientY / window.innerHeight) * 2 - 1) * mouseScale.y;
+    lastPointAt = clock ? clock.getElapsedTime() : 0;
   }
   window.addEventListener("mousemove", (e) => setTargetFromPoint(e.clientX, e.clientY));
   window.addEventListener(
     "touchstart",
-    (e) => e.touches[0] && setTargetFromPoint(e.touches[0].clientX, e.touches[0].clientY),
+    (e) => {
+      if (!e.touches[0]) return;
+      setTargetFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+      tapPulse = 1;
+    },
     { passive: true }
   );
   window.addEventListener(
@@ -219,8 +330,20 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     currentTilt += (targetTilt - currentTilt) * 0.04;
     currentAmplitude += (targetAmplitude - currentAmplitude) * 0.04;
 
+    const elapsedNow = clock.getElapsedTime();
+
+    // Blend from "follow the pointer" to "wander on its own" over the two
+    // seconds after input stops. On a phone there is no cursor, so this is
+    // the difference between a live surface and a still one.
+    const idleness = Math.min(1, Math.max(0, (elapsedNow - lastPointAt - 1.4) / 2));
+    const orbitX = Math.cos(elapsedNow * 0.21) * mouseScale.x * 0.44;
+    const orbitY = Math.sin(elapsedNow * 0.17) * mouseScale.y * 0.3;
+    mouseTarget.x = pointerTarget.x + (orbitX - pointerTarget.x) * idleness;
+    mouseTarget.y = pointerTarget.y + (orbitY - pointerTarget.y) * idleness;
+
     // Critically-damped-ish spring toward the target for both axes.
-    const boost = isCompact ? 1.6 : 1;
+    tapPulse *= Math.exp(-3.2 * dt);
+    const boost = (isCompact ? 1.75 : 1) * (1 + tapPulse * 0.85);
     ["x", "y"].forEach((axis) => {
       const force = (mouseTarget[axis] - mousePos[axis]) * SPRING_STIFFNESS;
       mouseVel[axis] += force * dt;
@@ -231,9 +354,25 @@ export async function initPageGrid({ canvasId = "page-webgl", color = 0x93e0b8 }
     // Flow the grid lines themselves, matrix-rain style. Wrapping at
     // exactly one cell height makes the finite plane read as an endless
     // scrolling grid with no visible seam.
-    const elapsed = clock.getElapsedTime();
+    const elapsed = elapsedNow;
     const driftY = (elapsed * GRID_DRIFT_SPEED) % cellH;
     mesh.position.y = driftY;
+    // Locked to the grid's own drift so the towers never slide across it.
+    skyline.position.y = driftY;
+
+    // Towers rise with scroll progress, each on its own threshold.
+    for (const b of buildings) {
+      const t = Math.min(1, Math.max(0, (progress - b.riseStart) / b.riseSpan));
+      const eased = t * t * (3 - 2 * t);
+      const h = eased * b.height;
+      b.obj.visible = h > 0.012;
+      if (b.obj.visible) b.obj.scale.set(b.footprintX, b.footprintY, h);
+    }
+    // Kept a little brighter than the grid so they read as structures
+    // standing on it rather than as more of the same mesh.
+    // Deliberately below the grid's own brightness: the skyline is depth,
+    // not a foreground element, and page copy has to win over it.
+    skylineMaterial.opacity = Math.min(0.5, opacity * 0.95);
 
     scene.rotation.x = currentTilt;
     uniforms.uTime.value = elapsed;

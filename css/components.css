@@ -215,6 +215,31 @@
   justify-content: center;
 }
 
+.hero-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  max-width: 100%;
+  margin-top: var(--space-sm);
+  padding: 0.6rem 1.15rem;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--color-ink-text);
+  background: rgba(12, 143, 82, 0.2);
+  border: 1px solid rgba(95, 224, 160, 0.5);
+  box-shadow: 0 0 34px -12px rgba(12, 143, 82, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.hero-note svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  stroke: #5fe0a0;
+}
+
 .hero__actions .btn--ghost-dark:hover {
   border-color: rgba(95, 224, 160, 0.85);
   background: rgba(11, 18, 32, 0.78);
@@ -225,11 +250,43 @@
    there), and the tightness reads as cramped on a small screen, so loosen
    it back up and let the hero size to its content instead of forcing it
    to fill the screen exactly. */
+@media (max-width: 700px) {
+  .hero {
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .hero__inner {
+    width: 100%;
+  }
+}
+
 @media (max-width: 640px) {
   .hero {
-    min-height: 0;
-    padding-top: calc(56px + var(--space-xl));
-    padding-bottom: var(--space-xl);
+    min-height: 100svh;
+    padding-top: calc(56px + var(--space-md));
+    padding-bottom: var(--space-md);
+  }
+
+  .hero h1 {
+    font-size: clamp(2.1rem, 10.5vw, 3rem);
+  }
+
+  .hero__actions {
+    margin: var(--space-md) 0 var(--space-sm);
+  }
+
+  .hero-note {
+    /* Wraps to three lines here, so the tick lines up with the first one
+       instead of floating against the middle of the block. */
+    align-items: flex-start;
+    font-size: var(--text-xs);
+    padding: 0.55rem 0.9rem;
+    text-align: left;
+  }
+
+  .hero-note svg {
+    margin-top: 0.15em;
   }
 
   .hero__actions {
@@ -787,24 +844,68 @@
   flex-shrink: 0;
 }
 
-/* --- Stacked layout -------------------------------------------------- */
-/* Below the radial layout's comfortable width the nodes would collide,
-   so drop the stage and read it as a single column instead: inputs, the
-   automation, then outputs, in DOM order. */
-@media (max-width: 900px) {
+/* --- Portrait layout ------------------------------------------------- */
+/* Below the width the six-spoke hub needs, the same diagram re-flows into
+   a portrait hub: inputs fan in from above, outputs fan out below. The
+   nodes read --mx/--my instead of --nx/--ny, and the tall wire layer
+   takes over from the wide one — a single-column list loses the whole
+   point of the diagram, which is that everything meets in one place. */
+.runflow__wires--tall {
+  display: none;
+}
+
+@media (max-width: 820px) {
   .runflow {
-    aspect-ratio: auto;
-    max-width: 22rem;
+    /* Matches the tall wire layer's viewBox so node and wire endpoints
+       stay in step, and stays narrow enough that the three-across rows
+       don't need to be read at arm's length. */
+    aspect-ratio: 700 / 1150;
+    max-width: 24rem;
   }
 
-  .runflow__wires {
+  .runflow__wires--wide {
     display: none;
   }
 
-  .runflow__nodes {
-    display: flex;
-    flex-direction: column;
-    gap: 2.1rem;
+  .runflow__wires--tall {
+    display: block;
+  }
+
+  .runflow__node {
+    left: var(--mx);
+    top: var(--my);
+    width: 30%;
+    margin-left: -15%;
+  }
+
+  .runflow__node--hub {
+    width: 44%;
+    margin-left: -22%;
+  }
+
+  .runflow__box {
+    padding: 0.5rem 0.55rem;
+  }
+
+  .runflow__box::after {
+    transform: translate(4px, 5px);
+  }
+
+  .runflow__node h4 {
+    font-size: 0.76rem;
+  }
+
+  .runflow__node p {
+    font-size: 0.66rem;
+    line-height: 1.4;
+  }
+
+  .runflow__node--hub h4 {
+    font-size: 0.88rem;
+  }
+
+  .runflow__kicker {
+    font-size: 0.55rem;
   }
 
   /* A centred icon beside two wrapped lines of mono text reads as a
@@ -812,74 +913,6 @@
   .flow-note {
     flex-direction: column;
     gap: var(--space-3xs);
-  }
-
-  .runflow__node,
-  .runflow__node--hub {
-    position: relative;
-    left: auto;
-    top: auto;
-    width: 100%;
-    margin-left: 0;
-    transform: none;
-  }
-
-  .runflow[data-flow-ready] .runflow__node {
-    transform: translateY(14px);
-  }
-
-  .runflow[data-flow-ready].is-visible .runflow__node {
-    transform: none;
-  }
-
-  /* Standing in for the wires: a short vertical line in each gap, with a
-     dot running down it. */
-  .runflow__node + .runflow__node::before,
-  .runflow__node + .runflow__node::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: -2.1rem;
-    pointer-events: none;
-  }
-
-  .runflow__node + .runflow__node::before {
-    width: 2px;
-    height: 2.1rem;
-    margin-left: -1px;
-    background: linear-gradient(to bottom, rgba(95, 224, 160, 0.12), rgba(95, 224, 160, 0.5));
-  }
-
-  .runflow__node + .runflow__node::after {
-    width: 6px;
-    height: 6px;
-    margin-left: -3px;
-    border-radius: 50%;
-    background: #b6ffda;
-    opacity: 0;
-  }
-
-  .runflow.is-visible .runflow__node + .runflow__node::after {
-    animation: runflow-dot-stack 2.9s linear infinite;
-    animation-delay: calc(var(--i) * 0.3s + 0.6s);
-  }
-
-  @keyframes runflow-dot-stack {
-    0% {
-      transform: translateY(0);
-      opacity: 0;
-    }
-    10% {
-      opacity: 1;
-    }
-    80% {
-      opacity: 1;
-    }
-    95%,
-    100% {
-      transform: translateY(2.1rem);
-      opacity: 0;
-    }
   }
 }
 
@@ -890,8 +923,7 @@
   }
 
   .runflow.is-visible .runflow__box,
-  .runflow.is-visible .runflow__dot,
-  .runflow.is-visible .runflow__node + .runflow__node::after {
+  .runflow.is-visible .runflow__dot {
     animation: none;
   }
 }
@@ -1078,7 +1110,8 @@
   .scroll-cue {
     position: static;
     transform: none;
-    margin: var(--space-lg) auto 0;
+    margin: var(--space-md) auto 0;
+    flex-shrink: 0;
   }
 
   .scroll-cue__label {
@@ -1229,8 +1262,8 @@
   width: 100%;
   padding: 0.7rem 0.85rem;
   border-radius: var(--radius-sm);
-  border: 1px solid transparent;
-  background: rgba(19, 28, 49, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(15, 24, 41, 0.9);
   color: var(--color-ink-text-muted);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
@@ -1351,5 +1384,62 @@
   .faq-console__q[aria-selected="true"] .faq-console__prompt,
   .faq-console__answer--typed.is-typing::after {
     animation: none;
+  }
+}
+
+/* ============================================================
+   Phone polish
+   ------------------------------------------------------------
+   Breathing room and type sizes that were tuned for desktop and read
+   cramped once the same blocks are 350px wide.
+   ============================================================ */
+@media (max-width: 620px) {
+  .section-pad {
+    padding-block: var(--space-xl);
+  }
+
+  .process-steps {
+    gap: var(--space-sm);
+  }
+
+  .process-step {
+    padding: var(--space-md) var(--space-sm) var(--space-sm);
+  }
+
+  .process-step__num {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-xs);
+  }
+
+  .run-flow-head,
+  .section-head {
+    margin-bottom: var(--space-md);
+  }
+
+  .run-flow-head {
+    margin-top: var(--space-lg);
+  }
+
+  .faq-console__q {
+    font-size: var(--text-xs);
+    padding: 0.65rem 0.7rem;
+  }
+
+  .faq-console__answer {
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
+
+  .contact-form {
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .contact__direct {
+    gap: var(--space-xs);
+  }
+
+  /* Full-width tap targets beat centred ones the thumb has to aim at. */
+  .contact__direct-item {
+    font-size: var(--text-xs);
   }
 }
